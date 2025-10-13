@@ -3,15 +3,15 @@ package main
 import (
 	"fmt"
 
-	"github.com/kgugunava/gorkycode_backend/internal/config"
+	"github.com/kgugunava/gorkycode_backend/internal/app"
 )
 
-func init() {
-	Cfg.InitConfig()
-}
-
-var Cfg = config.NewConfig()
+// func init() {
+// 	Cfg.InitConfig()
+// }
 
 func main() {
-	fmt.Println(Cfg.ServerAddress)
+	app := app.NewApp()
+
+	fmt.Println(app.Cfg.ServerAddress)
 }

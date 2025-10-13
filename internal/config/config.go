@@ -5,17 +5,28 @@ import (
 )
 
 type Config struct {
-	ServerAddress string `env:"SERVER_ADDRESS"`
-	Port string `env:"PORT"`
+	ServerAddress string `mapstructure:"SERVER_ADDRESS"`
+	Port string `mapstructure:"PORT"`
 }
 
 func NewConfig() Config {
 	return Config{}
 }
 
-func (cfg *Config) InitConfig() {
-	serverAddress := viper.GetString("SERVER_ADDRESS")
-	port := viper.GetString("PORT")
-	cfg.ServerAddress = serverAddress
-	cfg.Port = port
+func (cfg *Config) InitConfig(configPath string) error {
+	viper.AddConfigPath(configPath)
+	viper.SetConfigName("")
+	viper.SetConfigType("env")
+
+	viper.AutomaticEnv()
+
+	if err := viper.ReadInConfig(); err != nil {
+		return err
+	}
+
+	if err := viper.Unmarshal(&cfg); err != nil {
+		return err
+	}
+
+	return nil
 }
