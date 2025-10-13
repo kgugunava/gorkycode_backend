@@ -1,17 +1,15 @@
 package main
 
 import (
-	"fmt"
 
+	"github.com/kgugunava/gorkycode_backend/internal/adapters/postgres"
 	"github.com/kgugunava/gorkycode_backend/internal/app"
 )
 
-// func init() {
-// 	Cfg.InitConfig()
-// }
-
 func main() {
 	app := app.NewApp()
-
-	fmt.Println(app.Cfg.ServerAddress)
+	// app.Router.Route(fmt.Sprintf("%s%s", app.Cfg.ServerAddress, app.Cfg.Port))
+	db := postgres.NewPostgres()
+	db.ConnectToDatabase(app.Cfg)
+	db.CreateDatabase(app.Cfg)
 }
