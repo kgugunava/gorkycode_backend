@@ -28,6 +28,23 @@ func (p *Postgres) ConnectToDatabase(cfg config.Config) error {
 		log.Fatal(err)
 	}
 	p.Pool = newPostgresPool
+
+	if err := p.CreateDatabase(cfg); err != nil {
+        return fmt.Errorf("failed to create database: %w", err)
+    }
+    
+    p.Pool.Close()
+    
+    dbUrl = fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=%s", 
+        cfg.DbUser, cfg.DbPassword, cfg.DbAddress, cfg.DbPort, cfg.DbName, cfg.SslMode)
+    
+    newPostgresPool, err = pgxpool.New(context.Background(), dbUrl)
+    if err != nil {
+        return fmt.Errorf("failed to connect to target database: %w", err)
+    }
+    p.Pool = newPostgresPool
+    
+    fmt.Printf("Successfully connected to database: %s\n", cfg.DbName)
 	return nil
 }
 
@@ -35,11 +52,20 @@ func (p *Postgres) CreateDatabase(cfg config.Config) error {
 	var dbExists bool
 	err := p.Pool.QueryRow(context.Background(), "SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = $1)", cfg.DbName).Scan(&dbExists)
 	if err != nil {
-		log.Fatal(err)
+		// log.Fatal(err)
+		return err
 	}
 	if !dbExists {
-		return fmt.Errorf("database doesnt exist")
+		_, err = p.Pool.Exec(context.Background(), 
+            "CREATE DATABASE "+cfg.DbName)
+        if err != nil {
+            return err
+        }
+        fmt.Printf("Database %s created\n", cfg.DbName)
+		// return fmt.Errorf("database doesnt exist")
+	} else {
+		fmt.Printf("Database %s already exists\n", cfg.DbName)
 	}
-	fmt.Println(dbExists)
+	// fmt.Println(dbExists)
 	return nil
 }

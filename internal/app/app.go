@@ -11,10 +11,10 @@ type App struct {
 }
 
 func NewApp() *App {
-	newApp := App{
+	newApp := &App{
 		Cfg: config.NewConfig(),
 		Router: http.NewRouter(),
 	}
 	newApp.Cfg.InitConfig()
-	return &newApp
+	return newApp
 }
