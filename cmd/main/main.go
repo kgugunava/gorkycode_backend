@@ -1,7 +1,6 @@
 package main
 
 import (
-
 	"github.com/kgugunava/gorkycode_backend/internal/adapters/postgres"
 	"github.com/kgugunava/gorkycode_backend/internal/app"
 )
@@ -12,4 +11,5 @@ func main() {
 	db := postgres.NewPostgres()
 	db.ConnectToDatabase(app.Cfg)
 	db.CreateDatabase(app.Cfg)
+	db.CreateDatabaseTables(app.Cfg)
 }
