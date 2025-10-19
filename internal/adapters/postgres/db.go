@@ -32,6 +32,23 @@ func (p *Postgres) ConnectToDatabase(cfg config.Config) error {
 	return nil
 }
 
+func (p *Postgres) ConnectToTargetDatabase(cfg config.Config) error {
+    dbUrl := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=%s", 
+        cfg.DbUser, cfg.DbPassword, cfg.DbAddress, cfg.DbPort, cfg.DbName, cfg.SslMode)
+    
+    fmt.Printf("🔗 Connecting to target database: %s\n", dbUrl)
+    
+    newPostgresPool, err := pgxpool.New(context.Background(), dbUrl)
+    if err != nil {
+		log.Fatal(err)
+        return err
+    }
+    
+    p.Pool = newPostgresPool
+    fmt.Println("Connected to target database")
+    return nil
+}
+
 func (p *Postgres) CreateDatabase(cfg config.Config) error {
 	var dbExists bool
 	err := p.Pool.QueryRow(context.Background(), "SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = $1)", cfg.DbName).Scan(&dbExists)
@@ -55,12 +72,12 @@ func (p *Postgres) CreateDatabase(cfg config.Config) error {
 			return err
 		}
 
-		_, err = p.Pool.Exec(context.Background(), 
-				`CREATE EXTENSION IF NOT EXISTS vector;`)
-		if err != nil {
-			log.Fatal(err)
-			return err
-		}
+		// _, err = p.Pool.Exec(context.Background(), 
+		// 		`CREATE EXTENSION IF NOT EXISTS vector;`)
+		// if err != nil {
+		// 	log.Fatal(err)
+		// 	return err
+		// }
 	}
 	return nil
 }
@@ -72,6 +89,7 @@ func (p *Postgres) CreateDatabaseTables(cfg config.Config) error {
 	er := p.Pool.QueryRow(context.Background(), `SELECT current_database();`).Scan(&row)
 	if er != nil {
 		log.Fatal(er)
+		return er
 	}
 	fmt.Println(row)
 

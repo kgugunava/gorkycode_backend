@@ -9,7 +9,7 @@ import (
 
 type Config struct {
 	ServerAddress string `env:"SERVER_ADDRESS"`
-	Port string `env:"PORT"`
+	Port string `env:"SERVER_PORT"`
 	DbUser string `env:"DB_USER"`
 	DbPassword string `env:"DB_PASSWORD"`
 	DbAddress string `env:"DB_ADDRESS"`

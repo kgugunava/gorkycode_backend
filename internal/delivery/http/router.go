@@ -19,10 +19,9 @@ func NewRouter() Router {
 
 func (r *Router) Route(serverAddress string) {
 	r.Engine.GET("/ping", func(c *gin.Context) {
-    // Return JSON response
     c.JSON(http.StatusOK, gin.H{
-      "message": "pong",
-    })
+			"message": "pong",
+		})
   	})
 	r.Engine.Run(serverAddress)
 }
