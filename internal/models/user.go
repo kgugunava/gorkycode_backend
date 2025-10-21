@@ -1,6 +1,9 @@
 package models
 
 type User struct {
-	Id int
+	UserId int
 	Name string
+	Email string
+	PasswordToken string
+	Avatar []byte
 }

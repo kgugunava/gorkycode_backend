@@ -1,7 +1,8 @@
 package http
 
 import (
-	"net/http"
+	
+	"github.com/kgugunava/gorkycode_backend/internal/delivery/http/handlers"
 
 	"github.com/gin-gonic/gin"
 )
@@ -18,11 +19,6 @@ func NewRouter() Router {
 }
 
 func (r *Router) Route(serverAddress string) {
-	r.Engine.GET("/ping", func(c *gin.Context) {
-    // Return JSON response
-    c.JSON(http.StatusOK, gin.H{
-      "message": "pong",
-    })
-  	})
+	r.Engine.GET("/create_request", handlers.CreateRouteHandler)
 	r.Engine.Run(serverAddress)
 }
