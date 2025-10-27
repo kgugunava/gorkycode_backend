@@ -1,0 +1,50 @@
+services:
+
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: gorkycode
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+    container_name: db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+      - ./backups:/backups
+
+  # llm:
+  #   build:
+  #     context: .
+  #     dockerfile: src/RETRIEVER/Dockerfile
+  #   ports:
+  #     - "8080:80"
+  #   container_name: llm
+  #   depends_on:
+  #     - db
+  #   volumes:
+  #     - ~/.cache/huggingface/hub:/models
+  #   environment:
+  #     - HF_HOME=/models
+  #   mem_limit: 7g
+  #   mem_reservation: 5g
+
+  osrm:
+    image: ghcr.io/project-osrm/osrm-backend
+    container_name: osrm-server
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/data
+    command:
+      - "osrm-routed"
+      - "-p"
+      - "8000"
+      - "--algorithm"
+      - "mld"
+      - "/data/volga-fed-district-251025.osrm"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
