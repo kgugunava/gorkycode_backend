@@ -20,8 +20,8 @@ func NewPostgres() Postgres {
 }
 
 func (p *Postgres) ConnectToDatabase(cfg config.Config) error {
-    dbUrl := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=%s", 
-        cfg.DbUser, cfg.DbPassword, cfg.DbHost, cfg.DbPort, "postgres", cfg.SslMode)
+    dbUrl := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+    cfg.DbHost, cfg.DbPort, cfg.DbUser, cfg.DbPassword, "postgres", cfg.SslMode)
     
     newPostgresPool, err := pgxpool.New(context.Background(), dbUrl)
     if err != nil {
@@ -33,8 +33,8 @@ func (p *Postgres) ConnectToDatabase(cfg config.Config) error {
 }
 
 func (p *Postgres) ConnectToTargetDatabase(cfg config.Config) error {
-    dbUrl := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=%s", 
-        cfg.DbUser, cfg.DbPassword, cfg.DbHost, cfg.DbPort, cfg.DbName, cfg.SslMode)
+    dbUrl := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+    cfg.DbHost, cfg.DbPort, cfg.DbUser, cfg.DbPassword, cfg.DbName, cfg.SslMode)
     
     fmt.Printf("Connecting to target database: %s\n", dbUrl)
     

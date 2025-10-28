@@ -1,15 +1,15 @@
 package http
 
 import (
-    "net/http"
-    
-    "github.com/gin-gonic/gin"
-    "github.com/jackc/pgx/v5/pgxpool"
-    
-    "github.com/kgugunava/gorkycode_backend/internal/adapters/postgres"
-    "github.com/kgugunava/gorkycode_backend/internal/delivery/http/handlers"
-    "github.com/kgugunava/gorkycode_backend/internal/delivery/http/middleware"
-    "github.com/kgugunava/gorkycode_backend/internal/services"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/kgugunava/gorkycode_backend/internal/adapters/postgres"
+	"github.com/kgugunava/gorkycode_backend/internal/delivery/http/handlers"
+	"github.com/kgugunava/gorkycode_backend/internal/delivery/http/middleware"
+	"github.com/kgugunava/gorkycode_backend/internal/services"
 )
 
 type Router struct {
@@ -24,18 +24,24 @@ func NewRouter(dbPool *pgxpool.Pool) Router {
     userRepo := postgres.NewUserRepository(dbPool)
     authService := services.NewAuthService(userRepo)
     authHandler := handlers.NewAuthHandler(authService)
+
+    routeRepo := postgres.NewRouteRepository(dbPool)
+    routeService := services.NewRouteService(routeRepo)
+    routeHandler := handlers.NewRouteHandler(routeService)
     
-    router.setupRoutes(authHandler)
+    router.setupRoutes(authHandler, routeHandler)
     
     return router
 }
 
 
-func (r *Router) setupRoutes(authHandler *handlers.AuthHandler) {
+func (r *Router) setupRoutes(authHandler *handlers.AuthHandler, routeHandler *handlers.RouteHandler) {
     api := r.Engine.Group("/api/v1")
     {
         api.POST("/register", authHandler.Register)
         api.POST("/login", authHandler.Login)
+
+        api.GET("/create_route", routeHandler.RouteHandle)
         
         api.GET("/ping", func(c *gin.Context) {
             c.JSON(http.StatusOK, gin.H{"message": "pong"})
@@ -52,6 +58,5 @@ func (r *Router) setupRoutes(authHandler *handlers.AuthHandler) {
 }
 
 func (r *Router) Route(serverAddress string) {
-	r.Engine.GET("/create_request", handlers.CreateRouteHandler)
-	r.Engine.Run(serverAddress)
+    r.Engine.Run(serverAddress)
 }
