@@ -1,6 +1,8 @@
 services:
-
   db:
+    build:
+      context: .
+      dockerfile: Dockerfile.db
     image: postgres
     restart: always
     environment:
@@ -13,22 +15,23 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql
       - ./backups:/backups
+      - ./init_db:/docker-entrypoint-initdb.d
 
-  # llm:
-  #   build:
-  #     context: .
-  #     dockerfile: src/RETRIEVER/Dockerfile
-  #   ports:
-  #     - "8080:80"
-  #   container_name: llm
-  #   depends_on:
-  #     - db
-  #   volumes:
-  #     - ~/.cache/huggingface/hub:/models
-  #   environment:
-  #     - HF_HOME=/models
-  #   mem_limit: 7g
-  #   mem_reservation: 5g
+  llm:
+    build:
+      context: .
+      dockerfile: src/RETRIEVER/Dockerfile
+    ports:
+      - "5001:5001"
+    container_name: llm
+    depends_on:
+      - db
+      - ollama
+    volumes:
+      - ~/.cache/huggingface/hub:/models
+    environment:
+      - HF_HOME=/models
+    restart: always
 
   osrm:
     image: ghcr.io/project-osrm/osrm-backend
@@ -44,7 +47,19 @@ services:
       - "--algorithm"
       - "mld"
       - "/data/volga-fed-district-251025.osrm"
+    restart: always
+
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - /Users/zanuda/.ollama:/root/.ollama
     restart: unless-stopped
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
 
 volumes:
   pgdata:
+  ollama_models:

@@ -40,7 +40,7 @@ class RoutePlanner:
         cursor = connection.cursor()
 
         cursor.execute(f'''
-        SELECT id, name, longitude, latitude FROM locations
+        SELECT id, name, longitude, latitude, address, description FROM locations
         WHERE id IN ({" ,".join([str(x) for x in locations['id']])});
         ''')
         test_data = cursor.fetchall()
@@ -48,9 +48,9 @@ class RoutePlanner:
         self.relevance_scores = {}
         self.relevance_scores[0] = 0
 
-        for i, (loc_id, name, lon, lat) in enumerate(test_data):
+        for i, (loc_id, name, lon, lat, addr, description) in enumerate(test_data):
             newLocation = Location(
-                loc_id, name, float(lon), float(lat), None, None)
+                loc_id, name, float(lon), float(lat), addr, description, None, None)
             self.all_nodes.append(newLocation)
             # print(user_point.get_latitude(), user_point.get_longitude(),
             #       newLocation.get_latitude(), newLocation.get_longitude())
@@ -168,7 +168,7 @@ class RoutePlanner:
             from_lon, from_lat = FROMpoint.get_longitude(), FROMpoint.get_latitude()
             to_lon, to_lat = TOpoint.get_longitude(), TOpoint.get_latitude()
 
-            url = f"http://localhost:8000/route/v1/foot/{from_lon},{from_lat};{to_lon},{to_lat}"
+            url = f"http://osrm:8000/route/v1/foot/{from_lon},{from_lat};{to_lon},{to_lat}"
             response = requests.get(url, timeout=30)
             data = response.json()
 
@@ -180,6 +180,17 @@ class RoutePlanner:
         return -1
 
     def solve(self):
+
+        response = {
+            "time": int,
+            # время, которое пользователь затратит на всеь маршрут
+            "description": "",
+            # описание маршрута
+            "count_places": int,
+            # кол-во точек на машруте
+            "places": []
+        }
+
         # Решаем задачу!
         solution = self.routing.SolveWithParameters(self.search_parameters)
 
@@ -198,6 +209,18 @@ class RoutePlanner:
                 node_index = self.manager.IndexToNode(index)
                 route_nodes.append(self.all_nodes[node_index])
                 visited_nodes.add(node_index)
+                response["places"].append({
+                    "title": self.all_nodes[node_index].get_title(),
+                    "addres": self.all_nodes[node_index].get_addr(),
+                    "coordinate": [self.all_nodes[node_index].get_latitude(), self.all_nodes[node_index].get_longitude()],
+                    "url": "",
+                    "time_to_visit": 30,
+                    # время на посещение?
+                    "time_to_come": -1,
+                    # время, чтобы добраться до места
+                    "description": self.all_nodes[node_index].get_description()
+                    # информация о месте
+                })
 
                 # Считаем relevance для посещенной точки (кроме стартовой)
                 if node_index != 0:
@@ -220,17 +243,25 @@ class RoutePlanner:
 
             plan_output += ' КОНЕЦ\n'
 
-            plan_output += f'Общее время пути: {total_time} минут или же \
+            plan_output += f'Общее время пути: {total_time - self.get_walking_time_from_and_to_user_in_minute(
+                route_nodes[-1], route_nodes[0])} минут или же \
             {(total_time - self.get_walking_time_from_and_to_user_in_minute(
-                route_nodes[-1], route_nodes[0]))/60} часов.\n'
+                    route_nodes[-1], route_nodes[0]))/60} часов.\n'
             plan_output += f'Суммарный relevance: {total_relevance}\n'
             plan_output += f'Посещено точек: {len(visited_nodes)} из \
             {self.num_locations}\n'
+
+            response["time"] = (total_time - self.get_walking_time_from_and_to_user_in_minute(
+                route_nodes[-1], route_nodes[0]))/60  # в часах
+            response["description"] = "я хз, но где-то надо добавить описание модельки"
+            response["count_places"] = len(visited_nodes)
 
             print(plan_output)
 
         else:
             print('Решение не найдено.')
+
+        return response
 
 
 # Создаем экземпляр класса и запускаем решение

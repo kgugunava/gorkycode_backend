@@ -1,11 +1,14 @@
 import psycopg2
+import torch
 from FlagEmbedding import BGEM3FlagModel, FlagReranker
+from flask import Flask, request, jsonify
 from yaml import safe_load
+
 # import json
 # import pandas as pd
 
 from RETRIEVER.retriever import Retriever
-# from MODEL.model import Model
+from MODEL.model import Model
 from OSRM.location import Location
 from OSRM.route_planner import RoutePlanner
 
@@ -57,47 +60,85 @@ def connect_database(user: str, password: str, host: str, port: str,
 
 
 def load_config():
-    with open('src/config/config.yml', 'r') as f:
+    with open('config/config.yml', 'r') as f:
         data = safe_load(f)
     return data
 
 
 def load_model():
+    device = "mps" if torch.backends.mps.is_available() else "cpu"
+    print(device)
     model = BGEM3FlagModel(data["MODEL"]["name"], local_files_only=True,
-                           use_fp16=True)
+                           use_fp16=(device != "mps"), device=device)
+    model.model.eval()
     return model
 
 
 def load_reranker():
+    device = "mps" if torch.backends.mps.is_available() else "cpu"
     reranker = FlagReranker(
-        data["MODEL"]["reranker"], local_files_only=True, use_fp16=True)
+        data["MODEL"]["reranker"], local_files_only=True, use_fp16=(device != "mps"))
     return reranker
 
 
 data = load_config()
-connection = connect_database(
-    data["DB"]["user"], data["DB"]["password"], data["DB"]["host"],
-    data["DB"]["port"], data["DB"]["database"])
 
 
-query = {
-    "interests": "Я хочу посмотреть на живописные виды. Посмотреть на объекты истории. Побывать в парках, а также в самых известных метсах",
-    "time": 200,
-    "coordinates": [43.853400, 56.261660,],
-    "user_info": ""
-}
-load_model()
+# load_model()
 
-retriever = Retriever(connection, load_model(), load_reranker())
-locations = retriever.get_top_by_embeddings(
-    query["interests"], data["BGE"]["dense"],
-    data["BGE"]["sparse"], data["BGE"]["colbert"])
-print(locations[["name", "mark"]])
-userPonit = Location(
-    0, "UserPoint", query["coordinates"][0], query["coordinates"][1])
-planner = RoutePlanner(connection, userPonit, query["time"],
-                       locations, data["RELEVANCE"]["weight_reranker"],
-                       data["RELEVANCE"]["weight_distance"])
-planner.solve()
 
-connection.close()
+# query = {
+#    "interests": "Я хочу посмотреть на живописные виды.
+#  Посмотреть на объекты истории.
+# Побывать в парках, а также в самых известных метсах",
+#    "time": 200,
+#    "coordinates": [43.853400, 56.261660,],
+#    "user_info": ""
+# }
+
+# всё, что ниже - работа сервера
+
+app = Flask(__name__)
+modelx = load_model()
+rerankerx = load_reranker()
+
+
+@app.route('/route', methods=['GET'])
+def handle_route_request():
+    connection = connect_database(
+        data["DB"]["user"], data["DB"]["password"], data["DB"]["host"],
+        data["DB"]["port"], data["DB"]["database"])
+    # полуяам json из запроса
+    json = request.get_json()
+    retriever = Retriever(connection, modelx, rerankerx)
+    # блок кода для обработки запроса моделькой
+    locations = retriever.get_top_by_embeddings(
+        json.get('interests'), data["BGE"]["dense"],
+        data["BGE"]["sparse"], data["BGE"]["colbert"]
+    )
+
+    # print(locations[["name", "mark"]])
+
+    userPonit = Location(
+        0, "UserPoint", json.get('coordinates')[0],
+        json.get('coordinates')[1], "", "")
+    planner = RoutePlanner(connection, userPonit, json.get('time_for_route'),
+                           locations, data["RELEVANCE"]["weight_reranker"],
+                           data["RELEVANCE"]["weight_distance"])
+
+    locations = planner.solve()
+
+    model = Model(data["OLLAMA"]["name"])
+    model.request_to_model(
+        data["OLLAMA"]["system_prompt"], data["OLLAMA"]["user_prompt"], locations, json.get('interests'))
+    connection.close()
+
+    return jsonify(locations)
+
+
+# planner.solve()
+
+
+# тут начинается область работы сервера
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5001)
