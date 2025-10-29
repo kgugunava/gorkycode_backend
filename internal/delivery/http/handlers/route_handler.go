@@ -20,8 +20,6 @@ func NewRouteHandler(routeService *services.RouteService) *RouteHandler {
 	return &RouteHandler{routeService: routeService}
 }
 
-
-
 func (h *RouteHandler) RouteHandle(c *gin.Context) {
 	request := services.SendRouteInfoRequest{}
 	c.BindJSON(&request)
@@ -48,4 +46,8 @@ func (h *RouteHandler) RouteHandle(c *gin.Context) {
 	h.routeService.Route(c, request, response)
 
 	c.JSON(http.StatusOK, "Route saved in Database")
+}
+
+func (h *RouteHandler) SaveRouteToFavouritesHandle(c *gin.Context) {
+	
 }

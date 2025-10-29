@@ -39,8 +39,7 @@ type RouteResponse struct {
 	Places []json.RawMessage `json:"places"`
 }
 
-
-func (s *RouteService) SendRouteInfo(request SendRouteInfoRequest) {
+type SaveRouteToFavouritesRequest struct {
 	
 }
 
