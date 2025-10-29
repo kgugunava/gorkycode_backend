@@ -29,23 +29,21 @@ func (w *RepositoryRouteWrapper) InitRepositoryRouteWrapper(queryJson json.RawMe
 	w.Route = &newRoute
 }
 
-func (r *RouteRepository) AddRouteToDatabase(ctx context.Context, repositoryRouteWrapper RepositoryRouteWrapper) error {
+func (r *RouteRepository) AddRouteToDatabase(ctx context.Context, repositoryRouteWrapper RepositoryRouteWrapper, description string) error {
 	route := repositoryRouteWrapper.Route
 
-	route.RouteId = 2
 	route.UserId = 2
-	route.Description = "route.Description"
+	route.Description = description
 	route.IsFavourite = false
 
 	query := `
 			INSERT INTO route (
-				route_id, user_id, query, route, description, is_favourite
-			) VALUES ($1, $2, $3, $4, $5, $6)
+				user_id, query, route, description, is_favourite
+			) VALUES ($1, $2, $3, $4, $5)
 		`
 	_, err := r.pool.Exec(ctx, query, 
-		route.RouteId, 
 		route.UserId,
-		route.Query, 
+		route.Query,
 		route.Route, 
 		route.Description,
 		route.IsFavourite)

@@ -57,5 +57,5 @@ func (s *RouteService) Route(ctx context.Context, request SendRouteInfoRequest, 
 	
 	serviceRouteWrapper := ServiceRouteWrapper{}
 	serviceRouteWrapper.InitServiceRouteWrapper(marshalledRequest, marshalledResponse)
-	s.routeRepo.AddRouteToDatabase(ctx, *serviceRouteWrapper.RepositoryRouteWrapper)
+	s.routeRepo.AddRouteToDatabase(ctx, *serviceRouteWrapper.RepositoryRouteWrapper, response.Description)
 }
