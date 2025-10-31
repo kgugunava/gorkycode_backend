@@ -11,6 +11,7 @@ type App struct {
     Cfg    config.Config
     Router http.Router
     DB     *postgres.Postgres
+    LoginnedUserId int
 }
 
 func NewApp() *App {

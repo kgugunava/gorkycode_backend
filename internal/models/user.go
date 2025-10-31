@@ -2,13 +2,14 @@ package models
 
 type User struct {
     Id           uint   `json:"user_id" db:"user_id"`
-    Name         string `json:"name" db:"name"`
+    Name         string `json:"fullname" db:"name"`
     Email        string `json:"email" db:"email"`
     PasswordHash string `json:"-" db:"password_hash"`
 }
 
 type RegisterRequest struct {
-    Name     string `json:"name" binding:"required"`
+    Name     string `json:"fullname" binding:"required"`
+    UserName     string `json:"username" binding:"required"`
     Email    string `json:"email" binding:"required,email"`
     Password string `json:"password" binding:"required,min=6"`
 }

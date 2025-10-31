@@ -39,11 +39,15 @@ type RouteResponse struct {
 	Places []json.RawMessage `json:"places"`
 }
 
+type FinalRouteResponse struct {
+	Places json.RawMessage `json:"places"`
+}
+
 type SaveRouteToFavouritesRequest struct {
 	
 }
 
-func (s *RouteService) Route(ctx context.Context, request SendRouteInfoRequest, response RouteResponse) { // получаем респонз и из него создаем модель route
+func (s *RouteService) Route(ctx context.Context, request SendRouteInfoRequest, response RouteResponse, userId int) { // получаем респонз и из него создаем модель route
 	marshalledRequest, err := json.Marshal(request)
 	if err != nil {
 		log.Fatal("Error while marshalling send route info request", err)
@@ -56,5 +60,13 @@ func (s *RouteService) Route(ctx context.Context, request SendRouteInfoRequest, 
 	
 	serviceRouteWrapper := ServiceRouteWrapper{}
 	serviceRouteWrapper.InitServiceRouteWrapper(marshalledRequest, marshalledResponse)
-	s.routeRepo.AddRouteToDatabase(ctx, *serviceRouteWrapper.RepositoryRouteWrapper, response.Description)
+	s.routeRepo.AddRouteToDatabase(ctx, *serviceRouteWrapper.RepositoryRouteWrapper, response.Description, userId)
+}
+
+func (s *RouteService) FinalRouteService(ctx context.Context, response FinalRouteResponse) ServiceRouteWrapper {
+	serviceRouteWrapper := ServiceRouteWrapper{
+		RepositoryRouteWrapper: &postgres.RepositoryRouteWrapper{},
+	}
+	s.routeRepo.GetInfoForFinalRoute(ctx, serviceRouteWrapper.RepositoryRouteWrapper)
+	return serviceRouteWrapper
 }

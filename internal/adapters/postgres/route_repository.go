@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/kgugunava/gorkycode_backend/internal/models"
 )
 
@@ -29,10 +30,37 @@ func (w *RepositoryRouteWrapper) InitRepositoryRouteWrapper(queryJson json.RawMe
 	w.Route = &newRoute
 }
 
-func (r *RouteRepository) AddRouteToDatabase(ctx context.Context, repositoryRouteWrapper RepositoryRouteWrapper, description string) error {
+func (r *RouteRepository) GetInfoForFinalRoute(ctx context.Context, repositoryRouteWrapper *RepositoryRouteWrapper) error{
+	query := `
+		SELECT id, user_id, query, route, description, is_favourite
+		FROM route
+		ORDER BY id DESC
+		LIMIT 1
+	`
+
+	var route models.Route
+
+	err := r.pool.QueryRow(ctx, query).Scan(
+		&route.RouteId,
+		&route.UserId,
+		&route.Query,
+		&route.Route,
+		&route.Description,
+		&route.IsFavourite,
+	)
+	if err != nil {
+		return err
+	}
+
+	repositoryRouteWrapper.Route = &route
+	return nil
+}
+
+func (r *RouteRepository) AddRouteToDatabase(ctx context.Context, repositoryRouteWrapper RepositoryRouteWrapper, description string, userId int) error {
 	route := repositoryRouteWrapper.Route
 
-	route.UserId = 2
+	route.UserId = userId
+	// fmt.Println(userId)
 	route.Description = description
 	route.IsFavourite = false
 
@@ -52,5 +80,5 @@ func (r *RouteRepository) AddRouteToDatabase(ctx context.Context, repositoryRout
 		log.Fatal("Failed to create route in database", err)
 	}
 
-	return nil
+	return ctx.Err()
 }

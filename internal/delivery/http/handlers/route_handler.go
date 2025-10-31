@@ -16,11 +16,48 @@ type RouteHandler struct {
     routeService *services.RouteService
 }
 
+type ResponseForRouteInMap struct {
+	Places json.RawMessage `json:"places"`
+}
+
 func NewRouteHandler(routeService *services.RouteService) *RouteHandler {
 	return &RouteHandler{routeService: routeService}
 }
 
+func (h *RouteHandler) RouteFinalHandle(c *gin.Context) {
+	_, exists := c.Get("user_id")
+    if !exists {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+        return
+    }
+	// userIdInt := int(userId.(uint))
+
+	response := services.FinalRouteResponse{}
+
+	serviceWrapper := h.routeService.FinalRouteService(c, response)
+
+	var fullJson map[string]json.RawMessage
+	if err := json.Unmarshal(serviceWrapper.RepositoryRouteWrapper.Route.Route, &fullJson); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot parse json"})
+		return
+	}
+
+	places, ok := fullJson["places"]
+	if !ok {
+		c.JSON(http.StatusNotFound, gin.H{"error": "places not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, places)
+}
+
 func (h *RouteHandler) RouteHandle(c *gin.Context) {
+	userId, exists := c.Get("user_id")
+    if !exists {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+        return
+    }
+
 	request := services.SendRouteInfoRequest{}
 	c.BindJSON(&request)
 
@@ -29,9 +66,19 @@ func (h *RouteHandler) RouteHandle(c *gin.Context) {
 		log.Fatal("Error while marshalling request from front", err)
 	}
 
-	resp, err := http.Post("http://localhost:8030", "application/json", bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest("GET", "http://localhost:5500/route", bytes.NewBuffer(jsonData))
 	if err != nil {
-		log.Fatal("Error while making POST request to Python server with ML models", err)
+		log.Fatal(err)
+	}
+
+	// Указываем тип контента
+	req.Header.Set("Content-Type", "application/json")
+
+	// Отправляем запрос
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	respBody, err := io.ReadAll(resp.Body)
@@ -43,11 +90,38 @@ func (h *RouteHandler) RouteHandle(c *gin.Context) {
 	response := services.RouteResponse{}
 	json.Unmarshal(respBody, &response)
 
-	h.routeService.Route(c, request, response)
+	userIdInt := int(userId.(uint))
 
-	c.JSON(http.StatusOK, "Route saved in Database")
-}
+	h.routeService.Route(c, request, response, userIdInt)
 
-func (h *RouteHandler) SaveRouteToFavouritesHandle(c *gin.Context) {
+	// responseForRouteInMap := ResponseForRouteInMap{}
 	
+	// err = json.Unmarshal(respBody, &responseForRouteInMap)
+	// if err != nil {
+	// 	log.Fatal("Error while unmarshalling json for responseForRouteInMap: ", err)
+	// }
+
+	var fullJson map[string]json.RawMessage
+	if err := json.Unmarshal(respBody, &fullJson); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot parse json"})
+		return
+	}
+
+	places, ok := fullJson["places"]
+	if !ok {
+		c.JSON(http.StatusNotFound, gin.H{"error": "places not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, places)
 }
+
+// func (h *RouteHandler) SaveRouteToFavourites(c *gin.Context) {
+// 	userId, exists := c.Get("user_id")
+//     if !exists {
+//         c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+//         return
+//     }
+// 	userIdInt := int(userId.(uint))
+
+// }

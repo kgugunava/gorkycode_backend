@@ -11,6 +11,13 @@ import (
 
 func AuthMiddleware() gin.HandlerFunc {
     return func(c *gin.Context) {
+
+        // Разрешаем preflight-запросы CORS
+        if c.Request.Method == http.MethodOptions {
+            c.Next()
+            return
+        }
+        
         authHeader := c.GetHeader("Authorization")
         if authHeader == "" {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})

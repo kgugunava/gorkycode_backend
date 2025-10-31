@@ -9,8 +9,9 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: gorkycode_backend_db
+      PGPORT: 5431
     ports:
-      - "5432:5432"
+      - "5431:5431"
     volumes:
       - pgdata:/var/lib/postgresql/data
 
