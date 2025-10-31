@@ -5,8 +5,8 @@ import (
     "time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
     "github.com/gin-contrib/cors"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/kgugunava/gorkycode_backend/internal/adapters/postgres"
 	"github.com/kgugunava/gorkycode_backend/internal/delivery/http/handlers"
@@ -60,6 +60,7 @@ func (r *Router) setupRoutes(authHandler *handlers.AuthHandler, routeHandler *ha
     {
         api.POST("/register", authHandler.Register)
         api.POST("/login", authHandler.Login)
+        
         api.GET("/ping", func(c *gin.Context) {
             c.JSON(http.StatusOK, gin.H{"message": "pong"})
         })
@@ -69,8 +70,9 @@ func (r *Router) setupRoutes(authHandler *handlers.AuthHandler, routeHandler *ha
     protected.Use(middleware.AuthMiddleware())
     {
         protected.GET("/profile", authHandler.Profile)
-        protected.POST("/create-route", routeHandler.RouteHandle)
-        // protected.GET("/route-final", routeHandler.RouteFinalHandle)
+        protected.GET("/create_route", routeHandler.RouteHandle)
+        protected.POST("/route/favourite", routeHandler.SaveRouteToFavouritesHandle)
+        protected.GET("/route/favourites", routeHandler.GetFavouritesHandle)
     }
     
     // r.Engine.GET("/test", handlers.TestHandler)

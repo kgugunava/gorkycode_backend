@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -56,10 +57,11 @@ func (r *RouteRepository) GetInfoForFinalRoute(ctx context.Context, repositoryRo
 	return nil
 }
 
-func (r *RouteRepository) AddRouteToDatabase(ctx context.Context, repositoryRouteWrapper RepositoryRouteWrapper, description string, userId int) error {
+func (r *RouteRepository) AddRouteToDatabase(ctx context.Context, repositoryRouteWrapper RepositoryRouteWrapper, description string, 
+										userID int) error {
 	route := repositoryRouteWrapper.Route
 
-	route.UserId = userId
+	route.UserId = userID
 	// fmt.Println(userId)
 	route.Description = description
 	route.IsFavourite = false
@@ -81,4 +83,58 @@ func (r *RouteRepository) AddRouteToDatabase(ctx context.Context, repositoryRout
 	}
 
 	return ctx.Err()
+}
+
+func (r *RouteRepository) UpdateFavouriteStatus(ctx context.Context, routeID int, userID int, isFavourite bool) error {
+	query := `
+		UPDATE route 
+		SET is_favourite = $1 
+		WHERE route_id = $2 AND user_id = $3
+	`
+	
+	result, err := r.pool.Exec(ctx, query, isFavourite, routeID, userID)
+	if err != nil {
+		log.Printf("Failed to update favourite status: %v", err)
+		return err
+	}
+
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("route not found or access denied")
+	}
+
+	return ctx.Err()
+}
+
+func (r *RouteRepository) GetUserFavourites(ctx context.Context, userID int) ([]models.Route, error) {
+	query := `
+		SELECT route_id, user_id, query, route, description, is_favourite
+		FROM route 
+		WHERE user_id = $1 AND is_favourite = true
+		ORDER BY route_id DESC
+	`
+	
+	rows, err := r.pool.Query(ctx, query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch favourites: %v", err)
+	}
+	defer rows.Close()
+
+	var routes []models.Route
+	for rows.Next() {
+		var route models.Route
+		err := rows.Scan(
+			&route.RouteId,
+			&route.UserId,
+			&route.Query,
+			&route.Route,
+			&route.Description,
+			&route.IsFavourite,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan route: %v", err)
+		}
+		routes = append(routes, route)
+	}
+
+	return routes, nil
 }
