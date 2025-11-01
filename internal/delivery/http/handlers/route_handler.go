@@ -89,7 +89,7 @@ func (h *RouteHandler) RouteHandle(c *gin.Context) {
 
 	fmt.Println(bytes.NewBuffer(jsonData))
 
-	req, err := http.NewRequest("POST", "http://localhost:5500/route", bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest("POST", "http://localhost:5001/route", bytes.NewBuffer(jsonData))
 	if err != nil {
 		log.Fatal(err)
 	}
