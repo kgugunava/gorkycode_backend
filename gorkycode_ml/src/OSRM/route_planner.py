@@ -24,7 +24,7 @@ class RoutePlanner:
 
         # +1 потому что срезает минуты, а мы должны быть уверены,
         # что он не вылезет за лимит времени
-        return int(duration[0] * 60) + 1
+        return int(duration[0] * 60) + 31
 
     def __init__(self, connection, user_point: Location,
                  T_limit: int, locations, weight_rerank, weight_distance):
@@ -81,10 +81,10 @@ class RoutePlanner:
                     row.append(1)
                 elif (from_node == user_point):
                     row.append(
-                        int(locations["time_to_user"][locations["id"] == to_node.get_id()][0]))
+                        int(locations["time_to_user"][locations["id"] == to_node.get_id()][0]) + 31)
                 elif (to_node == user_point):
                     row.append(
-                        int(locations["time_to_user"][locations["id"] == from_node.get_id()][0]))
+                        int(locations["time_to_user"][locations["id"] == from_node.get_id()][0]) + 31)
                 else:
                     row.append(self.loadTime(from_node.id, to_node.id))
             self.small_time_matrix.append(row)
@@ -168,7 +168,7 @@ class RoutePlanner:
             from_lon, from_lat = FROMpoint.get_longitude(), FROMpoint.get_latitude()
             to_lon, to_lat = TOpoint.get_longitude(), TOpoint.get_latitude()
 
-            url = f"http://osrm:8000/route/v1/foot/{from_lon},{from_lat};{to_lon},{to_lat}"
+            url = f"http://localhost:8000/route/v1/foot/{from_lon},{from_lat};{to_lon},{to_lat}"
             response = requests.get(url, timeout=30)
             data = response.json()
 
@@ -214,26 +214,25 @@ class RoutePlanner:
                     "addres": self.all_nodes[node_index].get_addr(),
                     "coordinate": [self.all_nodes[node_index].get_latitude(), self.all_nodes[node_index].get_longitude()],
                     "url": "",
-                    "time_to_visit": 30,
-                    # время на посещение?
-                    "time_to_come": -1,
+                    "time_to_visit": 30 if node_index != 0 else 0,
+                    "time_to_come": self.small_time_matrix[node_index][previous_index] - 30 if node_index != 0 else 0 ,
                     # время, чтобы добраться до места
                     "description": self.all_nodes[node_index].get_description()
                     # информация о месте
                 })
-
-                # Считаем relevance для посещенной точки (кроме стартовой)
+                
+                # Считаем relevance для посещенной точки (кроме стартовой) 
                 if node_index != 0:
                     total_relevance += self.relevance_scores.get(node_index, 0)
 
+                total_time += self.small_time_matrix[node_index][previous_index] - 30 if node_index != 0 else 0
+
                 plan_output += f'   ({self.all_nodes[node_index].get_title()} \
                 {self.all_nodes[node_index].get_id()}) ->'
-                previous_index = index
+                previous_index = node_index
                 index = solution.Value(self.routing.NextVar(index))
                 # Считаем общее время
-                total_time += self.routing.GetArcCostForVehicle(
-                    previous_index, index, 0)
-
+                
             # Добавляем последнюю точку
             node_index = self.manager.IndexToNode(index)
             if node_index not in visited_nodes:  # Чтобы не дублировать подсчет
@@ -251,9 +250,8 @@ class RoutePlanner:
             plan_output += f'Посещено точек: {len(visited_nodes)} из \
             {self.num_locations}\n'
 
-            response["time"] = (total_time - self.get_walking_time_from_and_to_user_in_minute(
-                route_nodes[-1], route_nodes[0]))/60  # в часах
-            response["description"] = "я хз, но где-то надо добавить описание модельки"
+            response["time"] = (total_time)  
+            response["description"] = ""
             response["count_places"] = len(visited_nodes)
 
             print(plan_output)

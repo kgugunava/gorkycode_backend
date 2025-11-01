@@ -10,14 +10,14 @@ class Retriever:
 
     def get_embeddings_from_query(self, query):
         query_embedding = self.model.encode(
-            [query], batch_size=32, return_dense=True, return_sparse=True,
-            return_colbert_vecs=True, convert_to_numpy=True)
+            [query], return_dense=True, return_sparse=True,
+            return_colbert_vecs=True, convert_to_numpy=True,batch_size=16  )
         return query_embedding
 
     def get_reranker(self, query, top_50):
 
         pairs = [[query, top_50['description'][i]] for i in range(50)]
-        reranker_score = self.reranker.compute_score(pairs, batch_size=32, )
+        reranker_score = self.reranker.compute_score(pairs,batch_size=16  )
         for i in range(50):
             top_50[i]['mark'] = 1 / (1 + np.exp(-reranker_score[i]))
         top_30 = np.sort(top_50, order='mark')[::-1][:30]

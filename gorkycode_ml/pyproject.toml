@@ -5,15 +5,15 @@ description = ""
 authors = [
     {name = "Vlad",email = "burovin123@yandex.com"}
 ]
-readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10,<3.14"
 dependencies = [
     "psycopg2 (>=2.9.11,<3.0.0)",
-    "numpy (>=2.3.4,<3.0.0)",
+    "numpy (>=2.2.0,<3.0.0)",
     "ortools (>=9.14.6206,<10.0.0)",
     "flask (>=3.1.2,<4.0.0)",
     "flagembedding (>=1.3.5,<2.0.0)",
-    "ollama (>=0.6.0,<0.7.0)"
+    "ollama (>=0.6.0,<0.7.0)",
+    "huggingface-hub (>=0.34.0,<1.0.0)"
 ]
 
 

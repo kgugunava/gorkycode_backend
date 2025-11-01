@@ -4,7 +4,7 @@ import json
 # Данные для отправки
 data = {
     "interests": "история, музеи, парки, архитектура",
-    "time_for_route": 60,
+    "time_for_route": 400,
     "coordinates": [43.99821, 56.308973]
 }
 

@@ -1,8 +1,14 @@
-import psycopg2
 import torch
+from packaging import version
+
+
+import psycopg2
+
 from FlagEmbedding import BGEM3FlagModel, FlagReranker
 from flask import Flask, request, jsonify
 from yaml import safe_load
+
+
 
 # import json
 # import pandas as pd
@@ -60,24 +66,21 @@ def connect_database(user: str, password: str, host: str, port: str,
 
 
 def load_config():
-    with open('config/config.yml', 'r') as f:
+    with open('src/config/config.yml','r', encoding='utf-8') as f:
         data = safe_load(f)
     return data
 
 
-def load_model():
-    device = "mps" if torch.backends.mps.is_available() else "cpu"
-    print(device)
-    model = BGEM3FlagModel(data["MODEL"]["name"], local_files_only=True,
-                           use_fp16=(device != "mps"), device=device)
+def load_model(device):
+    model = BGEM3FlagModel(data["MODEL"]["name"],device=device, local_files_only=True,
+                           use_fp16=True)
     model.model.eval()
     return model
 
 
-def load_reranker():
-    device = "mps" if torch.backends.mps.is_available() else "cpu"
+def load_reranker(device):
     reranker = FlagReranker(
-        data["MODEL"]["reranker"], local_files_only=True, use_fp16=(device != "mps"))
+        data["MODEL"]["reranker"],device=device, local_files_only=True, use_fp16=True)
     return reranker
 
 
@@ -97,10 +100,10 @@ data = load_config()
 # }
 
 # всё, что ниже - работа сервера
-
+device = "cuda" if torch.cuda.is_available() else "cpu"
 app = Flask(__name__)
-modelx = load_model()
-rerankerx = load_reranker()
+modelx = load_model(device)
+rerankerx = load_reranker(device)
 
 
 @app.route('/route', methods=['GET'])
@@ -117,7 +120,6 @@ def handle_route_request():
         data["BGE"]["sparse"], data["BGE"]["colbert"]
     )
 
-    # print(locations[["name", "mark"]])
 
     userPonit = Location(
         0, "UserPoint", json.get('coordinates')[0],
@@ -127,10 +129,8 @@ def handle_route_request():
                            data["RELEVANCE"]["weight_distance"])
 
     locations = planner.solve()
-
     model = Model(data["OLLAMA"]["name"])
-    model.request_to_model(
-        data["OLLAMA"]["system_prompt"], data["OLLAMA"]["user_prompt"], locations, json.get('interests'))
+    locations["description"] = model.request_to_model(data["OLLAMA"]["user_prompt"], locations, json.get('interests'))
     connection.close()
 
     return jsonify(locations)
