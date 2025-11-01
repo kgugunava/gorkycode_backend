@@ -4,6 +4,7 @@ import (
     "errors"
     "fmt"
 
+    "context"
     "golang.org/x/crypto/bcrypt"
     "github.com/kgugunava/gorkycode_backend/internal/models"
     "github.com/kgugunava/gorkycode_backend/internal/adapters/postgres"
@@ -12,10 +13,14 @@ import (
 
 type AuthService struct {
     userRepo *postgres.UserRepository
+    routeRepo *postgres.RouteRepository
 }
 
-func NewAuthService(userRepo *postgres.UserRepository) *AuthService {
-    return &AuthService{userRepo: userRepo}
+func NewAuthService(userRepo *postgres.UserRepository, routeRepo *postgres.RouteRepository) *AuthService {
+    return &AuthService{
+        userRepo: userRepo,
+        routeRepo: routeRepo,
+    }
 }
 
 func (s *AuthService) Register(req models.RegisterRequest) (*models.AuthResponse, error) {
@@ -98,4 +103,34 @@ func (s *AuthService) Login(req models.LoginRequest) (*models.AuthResponse, erro
         Email:  user.Email,
         Token:  token,
     }, nil
+}
+
+func (s *AuthService) GetProfileData(userID int) (map[string]interface{}, error) {
+    user, err := s.userRepo.FindByID(uint(userID))
+    if err != nil {
+        return nil, err
+    }
+    if user == nil {
+        return nil, errors.New("user not found")
+    }
+
+    routes, err := s.routeRepo.GetUserRoutes(context.Background(), userID)
+    if err != nil {
+        return nil, err
+    }
+
+    favourites, err := s.routeRepo.GetUserFavourites(context.Background(), userID)
+    if err != nil {
+        return nil, err
+    }
+
+    profile := map[string]interface{}{
+        "user_id":          user.Id,
+        "name":             user.Name,
+        "email":            user.Email,
+        "routes_number":    len(routes),
+        "favourite_routes": len(favourites),
+    }
+
+    return profile, nil
 }

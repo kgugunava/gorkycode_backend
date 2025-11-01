@@ -3,6 +3,7 @@ package handlers
 import (
     "net/http"
     "fmt"
+    "log"
 	
     "github.com/gin-gonic/gin"
     "github.com/kgugunava/gorkycode_backend/internal/models"
@@ -63,12 +64,24 @@ func (h *AuthHandler) Profile(c *gin.Context) {
         c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
         return
     }
+
+    var userIDint int
+	switch v := userID.(type) {
+	case uint:
+		userIDint = int(v)
+	case int:
+		userIDint = v
+	default:
+		log.Printf("Unexpected user_id type: %T, value: %v", userID, userID)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID type"})
+		return
+	}
+
+    profileData, err := h.authService.GetProfileData(userIDint)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+        return
+    }
     
-    email, _ := c.Get("user_email")
-    
-    c.JSON(http.StatusOK, gin.H{
-        "user_id": userID,
-        "email":   email,
-        "message": "Authenticated user data",
-    })
+    c.JSON(http.StatusOK, profileData)
 }

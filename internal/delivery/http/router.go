@@ -33,10 +33,10 @@ func NewRouter(dbPool *pgxpool.Pool) Router {
     }))
     
     userRepo := postgres.NewUserRepository(dbPool)
-    authService := services.NewAuthService(userRepo)
+    routeRepo := postgres.NewRouteRepository(dbPool)
+    authService := services.NewAuthService(userRepo, routeRepo)
     authHandler := handlers.NewAuthHandler(authService)
 
-    routeRepo := postgres.NewRouteRepository(dbPool)
     routeService := services.NewRouteService(routeRepo)
     routeHandler := handlers.NewRouteHandler(routeService)
     

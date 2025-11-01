@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-
 	"github.com/kgugunava/gorkycode_backend/internal/models"
 )
 
@@ -116,6 +115,40 @@ func (r *RouteRepository) GetUserFavourites(ctx context.Context, userID int) ([]
 	rows, err := r.pool.Query(ctx, query, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch favourites: %v", err)
+	}
+	defer rows.Close()
+
+	var routes []models.Route
+	for rows.Next() {
+		var route models.Route
+		err := rows.Scan(
+			&route.RouteId,
+			&route.UserId,
+			&route.Query,
+			&route.Route,
+			&route.Description,
+			&route.IsFavourite,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan route: %v", err)
+		}
+		routes = append(routes, route)
+	}
+
+	return routes, nil
+}
+
+func (r *RouteRepository) GetUserRoutes(ctx context.Context, userID int) ([]models.Route, error) {
+	query := `
+		SELECT route_id, user_id, query, route, description, is_favourite
+		FROM route 
+		WHERE user_id = $1
+		ORDER BY route_id DESC
+	`
+	
+	rows, err := r.pool.Query(ctx, query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch routes: %v", err)
 	}
 	defer rows.Close()
 
