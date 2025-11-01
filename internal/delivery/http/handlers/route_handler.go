@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-
-	// "fmt"
 	"io"
 	"log"
 	"net/http"
@@ -24,6 +22,15 @@ type ResponseForRouteInMap struct {
 
 func NewRouteHandler(routeService *services.RouteService) *RouteHandler {
 	return &RouteHandler{routeService: routeService}
+}
+
+type Place struct {
+    Addres       string    `json:"addres"`
+    Coordinate   []float64 `json:"coordinate"`
+    Description  string    `json:"description"`
+    TimeToCome   int       `json:"time_to_come"`
+    TimeToVisit  int       `json:"time_to_visit"`
+    Title        string    `json:"title"`
 }
 
 func (h *RouteHandler) RouteFinalHandle(c *gin.Context) {
@@ -80,7 +87,9 @@ func (h *RouteHandler) RouteHandle(c *gin.Context) {
 		log.Fatal("Error while marshalling request from front", err)
 	}
 
-	req, err := http.NewRequest("GET", "http://localhost:5500/route", bytes.NewBuffer(jsonData))
+	fmt.Println(bytes.NewBuffer(jsonData))
+
+	req, err := http.NewRequest("POST", "http://localhost:5500/route", bytes.NewBuffer(jsonData))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -113,12 +122,12 @@ func (h *RouteHandler) RouteHandle(c *gin.Context) {
 
 	h.routeService.Route(c, request, response, userIdInt)
 
-	// responseForRouteInMap := ResponseForRouteInMap{}
+	responseForRouteInMap := ResponseForRouteInMap{}
 	
-	// err = json.Unmarshal(respBody, &responseForRouteInMap)
-	// if err != nil {
-	// 	log.Fatal("Error while unmarshalling json for responseForRouteInMap: ", err)
-	// }
+	err = json.Unmarshal(respBody, &responseForRouteInMap)
+	if err != nil {
+		log.Fatal("Error while unmarshalling json for responseForRouteInMap: ", err)
+	}
 
 	var fullJson map[string]json.RawMessage
 	if err := json.Unmarshal(respBody, &fullJson); err != nil {
@@ -127,12 +136,18 @@ func (h *RouteHandler) RouteHandle(c *gin.Context) {
 	}
 
 	places, ok := fullJson["places"]
+
+	fmt.Println(places)
+
 	if !ok {
 		c.JSON(http.StatusNotFound, gin.H{"error": "places not found"})
 		return
 	}
 
-	c.JSON(http.StatusOK, places)
+
+	c.JSON(http.StatusOK, gin.H{
+		"places": places,
+	})
 }
 
 func (h *RouteHandler) SaveRouteToFavouritesHandle(c *gin.Context) {
