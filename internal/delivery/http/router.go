@@ -2,10 +2,10 @@ package http
 
 import (
 	"net/http"
-    "time"
+    // "time"
 
 	"github.com/gin-gonic/gin"
-    "github.com/gin-contrib/cors"
+    // "github.com/gin-contrib/cors"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/kgugunava/gorkycode_backend/internal/adapters/postgres"
@@ -23,14 +23,14 @@ func NewRouter(dbPool *pgxpool.Pool) Router {
         Engine: gin.Default(),
     }
 
-     router.Engine.Use(cors.New(cors.Config{
-        AllowOrigins:     []string{"http://localhost:5500", "http://127.0.0.1:5500"},
-        AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-        AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-        ExposeHeaders:    []string{"Content-Length"},
-        AllowCredentials: true,
-        MaxAge: 12 * time.Hour,
-    }))
+    //  router.Engine.Use(cors.New(cors.Config{
+    //     AllowOrigins:     []string{"http://localhost:5500", "http://127.0.0.1:5500"},
+    //     AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+    //     AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+    //     ExposeHeaders:    []string{"Content-Length"},
+    //     AllowCredentials: true,
+    //     MaxAge: 12 * time.Hour,
+    // }))
     
     userRepo := postgres.NewUserRepository(dbPool)
     routeRepo := postgres.NewRouteRepository(dbPool)
@@ -47,15 +47,6 @@ func NewRouter(dbPool *pgxpool.Pool) Router {
 
 
 func (r *Router) setupRoutes(authHandler *handlers.AuthHandler, routeHandler *handlers.RouteHandler) {
-
-    r.Engine.OPTIONS("/*path", func(c *gin.Context) {
-    c.Header("Access-Control-Allow-Origin", "http://localhost:5500")
-    c.Header("Access-Control-Allow-Origin", "http://127.0.0.1:5500")
-    c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-    c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Authorization")
-    c.Status(http.StatusOK)
-})
-
     api := r.Engine.Group("/api/v1")
     {
         api.POST("/register", authHandler.Register)
@@ -70,10 +61,32 @@ func (r *Router) setupRoutes(authHandler *handlers.AuthHandler, routeHandler *ha
     protected.Use(middleware.AuthMiddleware())
     {
         protected.GET("/profile", authHandler.Profile)
-        protected.GET("/create_route", routeHandler.RouteHandle)
+        protected.POST("/create-route", routeHandler.RouteHandle)
         protected.POST("/route/favourite", routeHandler.SaveRouteToFavouritesHandle)
         protected.GET("/route/favourites", routeHandler.GetFavouritesHandle)
     }
+
+    r.Engine.Static("/js", "../Gorkycode_frontend/Gorkycode_frontend/js")
+    r.Engine.Static("/html", "../Gorkycode_frontend/Gorkycode_frontend/html")
+    r.Engine.Static("/static", "../Gorkycode_frontend/Gorkycode_frontend")
+    r.Engine.NoRoute(func(c *gin.Context) {
+        // path := c.Request.URL.Path
+
+        // Если запрос не API и не статика — отдаем index.html
+        // if path != "" && path != "/" && (len(path) > 4 && path[:4] == "/api") {
+        //     c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+        //     return
+        // }
+        c.File("../Gorkycode_frontend/Gorkycode_frontend/html/index.html")
+    })
+
+    // r.Engine.OPTIONS("/*path", func(c *gin.Context) {
+    // c.Header("Access-Control-Allow-Origin", "http://localhost:5500")
+    // c.Header("Access-Control-Allow-Origin", "http://127.0.0.1:5500")
+    // c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+    // c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Authorization")
+    // c.Status(http.StatusOK)
+    // })
     
     // r.Engine.GET("/test", handlers.TestHandler)
 }

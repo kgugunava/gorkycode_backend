@@ -17,7 +17,7 @@ class Model:
     def request_to_model(self, user_prompt, locations, query):
        
         final_prompt = self.generate_prompt(user_prompt, locations, query)
-        print(final_prompt)
+        # print(final_prompt)
         response = self.client.chat(
             model=self.model,
             messages=[
@@ -31,5 +31,5 @@ class Model:
         )
 
         answer = response["message"]["content"].strip()
-        return answer
+        locations["description"] = str(answer)
 

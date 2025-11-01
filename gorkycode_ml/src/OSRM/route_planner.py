@@ -254,7 +254,7 @@ class RoutePlanner:
             response["description"] = ""
             response["count_places"] = len(visited_nodes)
 
-            print(plan_output)
+            # print(plan_output)
 
         else:
             print('Решение не найдено.')

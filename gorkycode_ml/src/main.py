@@ -1,6 +1,9 @@
 import torch
 from packaging import version
+import threading
 
+from flask import Response
+import json
 
 import psycopg2
 
@@ -104,36 +107,40 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 app = Flask(__name__)
 modelx = load_model(device)
 rerankerx = load_reranker(device)
+query_lock = threading.Lock()
+# query_lock = threading.Lock()
 
-
-@app.route('/route', methods=['GET'])
+@app.route('/route', methods=['POST'])
 def handle_route_request():
-    connection = connect_database(
-        data["DB"]["user"], data["DB"]["password"], data["DB"]["host"],
-        data["DB"]["port"], data["DB"]["database"])
-    # полуяам json из запроса
-    json = request.get_json()
-    retriever = Retriever(connection, modelx, rerankerx)
-    # блок кода для обработки запроса моделькой
-    locations = retriever.get_top_by_embeddings(
-        json.get('interests'), data["BGE"]["dense"],
-        data["BGE"]["sparse"], data["BGE"]["colbert"]
-    )
+    with query_lock:
+        connection = connect_database(
+            data["DB"]["user"], data["DB"]["password"], data["DB"]["host"],
+            data["DB"]["port"], data["DB"]["database"])
+        # полуяам json из запроса
+        jsonchik = request.get_json()
+        retriever = Retriever(connection, modelx, rerankerx)
+        # блок кода для обработки запроса моделькой
+        locations = retriever.get_top_by_embeddings(
+            jsonchik.get('interests'), data["BGE"]["dense"],
+            data["BGE"]["sparse"], data["BGE"]["colbert"]
+        )
 
 
-    userPonit = Location(
-        0, "UserPoint", json.get('coordinates')[0],
-        json.get('coordinates')[1], "", "")
-    planner = RoutePlanner(connection, userPonit, json.get('time_for_route'),
-                           locations, data["RELEVANCE"]["weight_reranker"],
-                           data["RELEVANCE"]["weight_distance"])
+        userPonit = Location(
+            0, "UserPoint", jsonchik.get('coordinates')[1],
+            jsonchik.get('coordinates')[0], "", "")
+        planner = RoutePlanner(connection, userPonit, jsonchik.get('time_for_route'),
+                            locations, data["RELEVANCE"]["weight_reranker"],
+                            data["RELEVANCE"]["weight_distance"])
 
-    locations = planner.solve()
-    model = Model(data["OLLAMA"]["name"])
-    locations["description"] = model.request_to_model(data["OLLAMA"]["user_prompt"], locations, json.get('interests'))
-    connection.close()
-
+        locations = planner.solve()
+        model = Model(data["OLLAMA"]["name"])
+        model.request_to_model(data["OLLAMA"]["user_prompt"], locations, jsonchik.get('interests'))
+        connection.close()
+        # print(locations)
     return jsonify(locations)
+# Response(json.dumps(locations, ensure_ascii=False, default=str), content_type="application/json")
+   
 
 
 # planner.solve()

@@ -61,23 +61,11 @@ func (h *RouteHandler) RouteFinalHandle(c *gin.Context) {
 }
 
 func (h *RouteHandler) RouteHandle(c *gin.Context) {
-	userID, exists := c.Get("user_id")
+	userId, exists := c.Get("user_id")
     if !exists {
         c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
         return
     }
-
-	var userIDint int
-	switch v := userID.(type) {
-	case uint:
-		userIDint = int(v)
-	case int:
-		userIDint = v
-	default:
-		log.Printf("Unexpected user_id type: %T, value: %v", userID, userID)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID type"})
-		return
-	}
 
 	request := services.SendRouteInfoRequest{}
 	c.BindJSON(&request)
@@ -113,12 +101,7 @@ func (h *RouteHandler) RouteHandle(c *gin.Context) {
 	response := services.RouteResponse{}
 	json.Unmarshal(respBody, &response)
 
-	h.routeService.Route(c, request, response, userIDint)
-
-	c.JSON(http.StatusOK, gin.H{"message": "Route saved in Database",
-								"user_id": userIDint,
-							})
-	userIdInt := int(userID.(uint))
+	userIdInt := int(userId.(uint))
 
 	h.routeService.Route(c, request, response, userIdInt)
 

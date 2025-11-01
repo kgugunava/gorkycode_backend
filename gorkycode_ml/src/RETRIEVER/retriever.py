@@ -1,5 +1,5 @@
 import numpy as np
-
+import threading
 
 class Retriever:
 
@@ -7,11 +7,13 @@ class Retriever:
         self.connection = connection
         self.model = model
         self.reranker = reranker
+        self.encode_lock = threading.Lock()
 
     def get_embeddings_from_query(self, query):
-        query_embedding = self.model.encode(
-            [query], return_dense=True, return_sparse=True,
-            return_colbert_vecs=True, convert_to_numpy=True,batch_size=16  )
+        with self.encode_lock:
+            query_embedding = self.model.encode(
+                [query], batch_size=16, return_dense=True, return_sparse=True,
+                return_colbert_vecs=True, convert_to_numpy=True)
         return query_embedding
 
     def get_reranker(self, query, top_50):
