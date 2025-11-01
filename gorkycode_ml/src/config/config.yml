@@ -1,0 +1,35 @@
+MODEL:
+  name: BAAI/bge-m3
+  reranker: BAAI/bge-reranker-v2-m3
+DS:
+  dir: data/cultural_objects_mnn.csv
+DB:
+  user: postgres
+  password: "12345"
+  host: '127.0.0.1'
+  port: "5432"
+  database: "gorkycode"
+BGE:
+  colbert: 1
+  dense: 1
+  sparse: 0.3
+GEO:
+  avg_speed: 4.5
+RELEVANCE:
+  weight_reranker: 0.8
+  weight_distance: 1
+OLLAMA:
+  name: gemma2:2b-instruct-q4_K_M
+  user_prompt: |
+    """
+     Я сделал запрос на построение маршрута по моми желаниям, вот они и их описани:
+    "{user_request}"
+    Вот маршрут, который был построен на основе этого запроса:
+    "{route_json}""
+    А теперь объсни почему этот маршрут самый лучший и подходит моим запросам.
+    Не сомневайяся в его правильности. Отвечай на русском
+    """
+
+
+
+    

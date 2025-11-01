@@ -1,0 +1,39 @@
+services:
+  db:
+    build:
+      context: .
+      dockerfile: Dockerfile.db
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: gorkycode
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+    container_name: db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+      - ./backups:/backups
+      - ./init_db:/docker-entrypoint-initdb.d
+
+
+  osrm:
+    image: ghcr.io/project-osrm/osrm-backend
+    container_name: osrm-server
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/data
+    command:
+      - "osrm-routed"
+      - "-p"
+      - "8000"
+      - "--algorithm"
+      - "mld"
+      - "/data/volga-fed-district-251025.osrm"
+    restart: always
+
+volumes:
+  pgdata:
+
