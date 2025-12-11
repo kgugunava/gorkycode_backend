@@ -1,10 +1,15 @@
 from ollama import Client
 import json
-
+import logging
 
 class Model:
     def __init__(self, model_name):
-        self.client = Client(host="http://localhost:11434")
+
+        self.logger = logging.getLogger("MODEL")
+        try:
+            self.client = Client(host="http://localhost:11434")
+        except:
+            self.logger.warning("CLIENT INITIALIZATION PROBLEM")
         self.model = model_name
 
     def generate_prompt(self, user_prompt, locations, query):
@@ -15,8 +20,9 @@ class Model:
         )
 
     def request_to_model(self, user_prompt, locations, query):
-       
         final_prompt = self.generate_prompt(user_prompt, locations, query)
+
+        self.logger.debug(f"REQUEST TO MODEL PROMPT : {final_prompt}")
         # print(final_prompt)
         response = self.client.chat(
             model=self.model,
@@ -32,4 +38,6 @@ class Model:
 
         answer = response["message"]["content"].strip()
         locations["description"] = str(answer)
+
+        self.logger.debug(f"REQUEST_TO_MODEL : ANSWER : {answer}")
 

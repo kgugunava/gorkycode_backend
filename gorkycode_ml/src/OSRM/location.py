@@ -1,7 +1,7 @@
 class Location:
     def __init__(
         self, id: int, title: str, longitude: float, latitude: float, addr: str, description: str,
-            sparse_emb: dict = None, dense_emb: list = None):
+            sparse_emb: dict = None, dense_emb: list = None):        
         self.id = id
         self.title = title
         self.longitude = longitude
