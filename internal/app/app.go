@@ -11,6 +11,7 @@ type App struct {
     Cfg    config.Config
     Router http.Router
     DB     *postgres.Postgres
+    Logger *utils.Logger
     LoginnedUserId int
 }
 
@@ -42,7 +43,9 @@ func NewApp() *App {
     app.DB = &db
     
 
-    app.Router = http.NewRouter(db.Pool)
+    app.Router = http.NewRouter(db.Pool, app.Logger)
+
+    app.Logger = utils.NewLogger(app.Cfg.LogsLevel)
     
     return app
 }

@@ -1,34 +1,37 @@
 package services
 
 import (
-    "errors"
-    "fmt"
+	"errors"
 
-    "context"
-    "golang.org/x/crypto/bcrypt"
-    "github.com/kgugunava/gorkycode_backend/internal/models"
-    "github.com/kgugunava/gorkycode_backend/internal/adapters/postgres"
-    "github.com/kgugunava/gorkycode_backend/internal/utils"
+	"context"
+
+	"github.com/kgugunava/gorkycode_backend/internal/adapters/postgres"
+	"github.com/kgugunava/gorkycode_backend/internal/models"
+	"github.com/kgugunava/gorkycode_backend/internal/utils"
+	"go.uber.org/zap"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthService struct {
     userRepo *postgres.UserRepository
     routeRepo *postgres.RouteRepository
+    logger *utils.Logger
 }
 
-func NewAuthService(userRepo *postgres.UserRepository, routeRepo *postgres.RouteRepository) *AuthService {
+func NewAuthService(userRepo *postgres.UserRepository, routeRepo *postgres.RouteRepository, logger *utils.Logger) *AuthService {
     return &AuthService{
         userRepo: userRepo,
         routeRepo: routeRepo,
+        logger: logger,
     }
 }
 
 func (s *AuthService) Register(req models.RegisterRequest) (*models.AuthResponse, error) {
-    fmt.Printf("Register attempt for email: %s\n", req.Email)
+    s.logger.Logger.Debug("Register attempt for email ", zap.String("email", req.Email))
     
     existingUser, err := s.userRepo.FindByEmail(req.Email)
     if err != nil {
-        fmt.Printf("Error checking existing user: %v\n", err)
+        s.logger.Logger.Error("Error checking existing user ", zap.Error(err))
         return nil, err
     }
     if existingUser != nil {
@@ -37,7 +40,7 @@ func (s *AuthService) Register(req models.RegisterRequest) (*models.AuthResponse
     
     hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
     if err != nil {
-        fmt.Printf("Error hashing password: %v\n", err)
+        s.logger.Logger.Error("Error hashing password ", zap.Error(err))
         return nil, err
     }
     
@@ -48,16 +51,16 @@ func (s *AuthService) Register(req models.RegisterRequest) (*models.AuthResponse
     }
     
     if err := s.userRepo.Create(user); err != nil {
-        fmt.Printf("Error creating user in DB: %v\n", err)
+        s.logger.Logger.Error("Error creating user in DB ", zap.Error(err))
         return nil, err
     }
     
-    fmt.Printf("User created with ID: %d\n", user.Id)
+    s.logger.Logger.Debug("User created ", zap.Uint("user_id", user.Id))
     
 	// генерация
     token, err := utils.GenerateToken(user.Id, user.Email)
     if err != nil {
-        fmt.Printf("Error generating token: %v\n", err)
+        s.logger.Logger.Error("Error generating token ", zap.Error(err))
         return nil, err
     }
     
@@ -70,32 +73,32 @@ func (s *AuthService) Register(req models.RegisterRequest) (*models.AuthResponse
 }
 
 func (s *AuthService) Login(req models.LoginRequest) (*models.AuthResponse, error) {
-    fmt.Printf("Login attempt for email: %s\n", req.Email)
+    s.logger.Logger.Debug("Login attempt for email ", zap.String("email", req.Email))
     
     user, err := s.userRepo.FindByEmail(req.Email)
     if err != nil {
-        fmt.Printf("Error finding user by email: %v\n", err)
+        s.logger.Logger.Error("Error finding user by email ", zap.Error(err))
         return nil, err
     }
     if user == nil {
         return nil, errors.New("invalid email or password")
     }
     
-    fmt.Printf("User found: ID=%d, Email=%s\n", user.Id, user.Email)
+    s.logger.Logger.Debug("User found ", zap.Uint("user_id", user.Id), zap.String("email", user.Email))
     
     if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
-        fmt.Printf("Password comparison failed: %v\n", err)
+        s.logger.Logger.Error("Password comparison failed ", zap.Error(err))
         return nil, errors.New("invalid email or password")
     }
     
     // генерация
     token, err := utils.GenerateToken(user.Id, user.Email)
     if err != nil {
-        fmt.Printf("Error generating token: %v\n", err)
+        s.logger.Logger.Error("Error generating token ", zap.Error(err))
         return nil, err
     }
     
-    fmt.Printf("Login successful for user ID: %d\n", user.Id)
+    s.logger.Logger.Debug("Login successful", zap.Uint("user_id", user.Id))
     
     return &models.AuthResponse{
         UserID: user.Id,

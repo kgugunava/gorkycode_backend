@@ -1,32 +1,34 @@
 package handlers
 
 import (
-    "net/http"
-    "fmt"
-    "log"
-	
-    "github.com/gin-gonic/gin"
-    "github.com/kgugunava/gorkycode_backend/internal/models"
-    "github.com/kgugunava/gorkycode_backend/internal/services"
+	"fmt"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/kgugunava/gorkycode_backend/internal/models"
+	"github.com/kgugunava/gorkycode_backend/internal/services"
+	"github.com/kgugunava/gorkycode_backend/internal/utils"
+	"go.uber.org/zap"
 )
 
 type AuthHandler struct {
     authService *services.AuthService
+    logger *utils.Logger
 }
 
-func NewAuthHandler(authService *services.AuthService) *AuthHandler {
+func NewAuthHandler(authService *services.AuthService, logger *utils.Logger) *AuthHandler {
     return &AuthHandler{authService: authService}
 }
 
 func (h *AuthHandler) Register(c *gin.Context) {
     var req models.RegisterRequest
     if err := c.ShouldBindJSON(&req); err != nil {
-        fmt.Printf("Register bind error: %v\n", err)
+        h.logger.Logger.Error("Register bind error", zap.Error(err))
         c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input: " + err.Error()})
         return
     }
     
-    fmt.Printf("Register request: %+v\n", req)
+    h.logger.Logger.Debug("Register user done ", zap.String("email", req.Email))
     
     authResponse, err := h.authService.Register(req)
     if err != nil {
@@ -41,16 +43,16 @@ func (h *AuthHandler) Register(c *gin.Context) {
 func (h *AuthHandler) Login(c *gin.Context) {
     var req models.LoginRequest
     if err := c.ShouldBindJSON(&req); err != nil {
-        fmt.Printf("Login bind error: %v\n", err)
+        h.logger.Logger.Error("Login bind error", zap.Error(err))
         c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input: " + err.Error()})
         return
     }
     
-    fmt.Printf("Login request: %+v\n", req)
+    h.logger.Logger.Debug("Login request done", zap.String("email", req.Email))
     
     authResponse, err := h.authService.Login(req)
     if err != nil {
-        fmt.Printf("Login service error: %v\n", err)
+        h.logger.Logger.Error("Login service error", zap.Error(err))
         c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
         return
     }
@@ -72,13 +74,14 @@ func (h *AuthHandler) Profile(c *gin.Context) {
 	case int:
 		userIDint = v
 	default:
-		log.Printf("Unexpected user_id type: %T, value: %v", userID, userID)
+		h.logger.Logger.Warn("Unexpected user_id", zap.Any("user_id", userID))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID type"})
 		return
 	}
 
     profileData, err := h.authService.GetProfileData(userIDint)
     if err != nil {
+        h.logger.Logger.Error("GetProfileData error", zap.Error(err))
         c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
         return
     }

@@ -15,6 +15,7 @@ type Config struct {
     SslMode       string `env:"SSL_MODE"`
     DbName        string `env:"DB_NAME"`
     JWTSecret     string `env:"JWT_SECRET"`
+    LogsLevel     string `env:"LOGS_LEVEL"`
 }
 
 func NewConfig() Config {
@@ -35,5 +36,6 @@ func (cfg *Config) InitConfig() error {
     cfg.SslMode = os.Getenv("SSL_MODE")
     cfg.DbName = os.Getenv("DB_NAME")
     cfg.JWTSecret = os.Getenv("JWT_SECRET")
+    cfg.LogsLevel = os.Getenv("LOGS_LEVEL")
     return nil
 }

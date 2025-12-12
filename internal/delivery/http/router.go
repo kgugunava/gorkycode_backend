@@ -2,23 +2,23 @@ package http
 
 import (
 	"net/http"
-    // "time"
 
 	"github.com/gin-gonic/gin"
-    // "github.com/gin-contrib/cors"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/kgugunava/gorkycode_backend/internal/adapters/postgres"
 	"github.com/kgugunava/gorkycode_backend/internal/delivery/http/handlers"
 	"github.com/kgugunava/gorkycode_backend/internal/delivery/http/middleware"
 	"github.com/kgugunava/gorkycode_backend/internal/services"
+    "github.com/kgugunava/gorkycode_backend/internal/utils"
 )
 
 type Router struct {
     Engine *gin.Engine
 }
 
-func NewRouter(dbPool *pgxpool.Pool) Router {
+func NewRouter(dbPool *pgxpool.Pool, logger *utils.Logger) Router {
+    // gin.SetMode(gin.ReleaseMode)
     router := Router{
         Engine: gin.Default(),
     }
@@ -32,21 +32,21 @@ func NewRouter(dbPool *pgxpool.Pool) Router {
     //     MaxAge: 12 * time.Hour,
     // }))
     
-    userRepo := postgres.NewUserRepository(dbPool)
-    routeRepo := postgres.NewRouteRepository(dbPool)
-    authService := services.NewAuthService(userRepo, routeRepo)
-    authHandler := handlers.NewAuthHandler(authService)
+    userRepo := postgres.NewUserRepository(dbPool, logger)
+    routeRepo := postgres.NewRouteRepository(dbPool, logger)
+    authService := services.NewAuthService(userRepo, routeRepo, logger)
+    authHandler := handlers.NewAuthHandler(authService, logger) 
 
-    routeService := services.NewRouteService(routeRepo)
-    routeHandler := handlers.NewRouteHandler(routeService)
+    routeService := services.NewRouteService(routeRepo, logger)
+    routeHandler := handlers.NewRouteHandler(routeService, logger)
     
-    router.setupRoutes(authHandler, routeHandler)
+    router.setupRoutes(authHandler, routeHandler, logger)
     
     return router
 }
 
 
-func (r *Router) setupRoutes(authHandler *handlers.AuthHandler, routeHandler *handlers.RouteHandler) {
+func (r *Router) setupRoutes(authHandler *handlers.AuthHandler, routeHandler *handlers.RouteHandler, logger *utils.Logger) {
     api := r.Engine.Group("/api/v1")
     {
         api.POST("/register", authHandler.Register)
@@ -58,7 +58,7 @@ func (r *Router) setupRoutes(authHandler *handlers.AuthHandler, routeHandler *ha
     }
     
     protected := api.Group("")
-    protected.Use(middleware.AuthMiddleware())
+    protected.Use(middleware.AuthMiddleware(logger))
     {
         protected.GET("/profile", authHandler.Profile)
         protected.POST("/create-route", routeHandler.RouteHandle)

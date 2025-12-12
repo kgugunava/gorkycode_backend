@@ -10,18 +10,21 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/kgugunava/gorkycode_backend/internal/services"
+	"github.com/kgugunava/gorkycode_backend/internal/utils"
+	"go.uber.org/zap"
 )
 
 type RouteHandler struct {
     routeService *services.RouteService
+	logger *utils.Logger
 }
 
 type ResponseForRouteInMap struct {
 	Places json.RawMessage `json:"places"`
 }
 
-func NewRouteHandler(routeService *services.RouteService) *RouteHandler {
-	return &RouteHandler{routeService: routeService}
+func NewRouteHandler(routeService *services.RouteService, logger *utils.Logger) *RouteHandler {
+	return &RouteHandler{routeService: routeService, logger: logger}
 }
 
 type Place struct {
@@ -39,7 +42,6 @@ func (h *RouteHandler) RouteFinalHandle(c *gin.Context) {
         c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
         return
     }
-	// userIdInt := int(userId.(uint))
 
 	response := services.FinalRouteResponse{}
 
@@ -72,7 +74,7 @@ func (h *RouteHandler) RouteHandle(c *gin.Context) {
 
 	jsonData, err := json.Marshal(request)
 	if err != nil {
-		log.Fatal("Error while marshalling request from front", err)
+		h.logger.Logger.Error("Error while marshalling request from front", zap.Error(err))
 	}
 
 	fmt.Println(bytes.NewBuffer(jsonData))
@@ -80,12 +82,11 @@ func (h *RouteHandler) RouteHandle(c *gin.Context) {
 	req, err := http.NewRequest("POST", "http://localhost:5001/route", bytes.NewBuffer(jsonData))
 	if err != nil {
 		log.Fatal(err)
+		h.logger.Logger.Error("Error in post/route ", zap.Error(err))
 	}
 
-	// Указываем тип контента
 	req.Header.Set("Content-Type", "application/json")
 
-	// Отправляем запрос
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -94,7 +95,7 @@ func (h *RouteHandler) RouteHandle(c *gin.Context) {
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal("Error while reading response body", err)
+		h.logger.Logger.Error("Error while reading response body", zap.Error(err))
 	}
 	defer resp.Body.Close()
 
@@ -109,7 +110,7 @@ func (h *RouteHandler) RouteHandle(c *gin.Context) {
 	
 	err = json.Unmarshal(respBody, &responseForRouteInMap)
 	if err != nil {
-		log.Fatal("Error while unmarshalling json for responseForRouteInMap: ", err)
+		h.logger.Logger.Error("Error while unmarshalling json for responseForRouteInMap: ", zap.Error(err))
 	}
 
 	var fullJson map[string]json.RawMessage
@@ -119,8 +120,6 @@ func (h *RouteHandler) RouteHandle(c *gin.Context) {
 	}
 
 	places, ok := fullJson["places"]
-
-	fmt.Println(places)
 
 	if !ok {
 		c.JSON(http.StatusNotFound, gin.H{"error": "places not found"})
@@ -146,7 +145,7 @@ func (h *RouteHandler) SaveRouteToFavouritesHandle(c *gin.Context) {
 	case int:
 		userIDint = v
 	default:
-		log.Printf("Unexpected user_id type: %T, value: %v", userID, userID)
+		h.logger.Logger.Warn("Unexpected user_id", zap.Any("user_id", userID))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID type"})
 		return
 	}
@@ -184,7 +183,7 @@ func (h *RouteHandler) GetFavouritesHandle(c *gin.Context) {
 	case int:
 		userIDint = v
 	default:
-		log.Printf("Unexpected user_id type: %T, value: %v", userID, userID)
+		h.logger.Logger.Warn("Unexpected user_id", zap.Any("user_id", userID))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID type"})
 		return
 	}

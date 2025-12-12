@@ -1,1 +1,2 @@
 cmd cmd/main cmd/main/main.go gorkycode_ml internal internal/adapters internal/app internal/config internal/delivery internal/models internal/services internal/utils .env .env.example docker-compose.yml go.mod go.sum
+.env
