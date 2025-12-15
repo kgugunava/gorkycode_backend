@@ -24,7 +24,7 @@ class RoutePlanner:
 
         # +1 потому что срезает минуты, а мы должны быть уверены,
         # что он не вылезет за лимит времени
-        return int(duration[0] * 60) + 31
+        return int(duration[0] * 60) + 11
 
     def __init__(self, connection, user_point: Location,
                  T_limit: int, locations, weight_rerank, weight_distance):
@@ -60,7 +60,7 @@ class RoutePlanner:
             self.relevance_scores[i+1] = locations['mark'][i] \
                 * weight_rerank + (1 - weight_rerank) \
                 * np.exp(-weight_distance *
-                         (30 + locations["time_to_user"][i]) / T_limit)
+                         (10 + locations["time_to_user"][i]) / T_limit)
 
         cursor.close()
 
@@ -81,10 +81,10 @@ class RoutePlanner:
                     row.append(1)
                 elif (from_node == user_point):
                     row.append(
-                        int(locations["time_to_user"][locations["id"] == to_node.get_id()][0]) + 31)
+                        int(locations["time_to_user"][locations["id"] == to_node.get_id()][0]) + 11)
                 elif (to_node == user_point):
                     row.append(
-                        int(locations["time_to_user"][locations["id"] == from_node.get_id()][0]) + 31)
+                        int(locations["time_to_user"][locations["id"] == from_node.get_id()][0]) + 11)
                 else:
                     row.append(self.loadTime(from_node.id, to_node.id))
             self.small_time_matrix.append(row)
@@ -214,8 +214,8 @@ class RoutePlanner:
                     "addres": self.all_nodes[node_index].get_addr(),
                     "coordinate": [self.all_nodes[node_index].get_latitude(), self.all_nodes[node_index].get_longitude()],
                     "url": "",
-                    "time_to_visit": 30 if node_index != 0 else 0,
-                    "time_to_come": self.small_time_matrix[node_index][previous_index] - 30 if node_index != 0 else 0 ,
+                    "time_to_visit": 10 if node_index != 0 else 0,
+                    "time_to_come": self.small_time_matrix[node_index][previous_index] - 10 if node_index != 0 else 0 ,
                     # время, чтобы добраться до места
                     "description": self.all_nodes[node_index].get_description()
                     # информация о месте
@@ -225,7 +225,7 @@ class RoutePlanner:
                 if node_index != 0:
                     total_relevance += self.relevance_scores.get(node_index, 0)
 
-                total_time += self.small_time_matrix[node_index][previous_index] - 30 if node_index != 0 else 0
+                total_time += self.small_time_matrix[node_index][previous_index] - 20 if node_index != 0 else 0
 
                 plan_output += f'   ({self.all_nodes[node_index].get_title()} \
                 {self.all_nodes[node_index].get_id()}) ->'

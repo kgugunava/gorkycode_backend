@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"fmt"
 
 	"github.com/kgugunava/gorkycode_backend/internal/adapters/postgres"
 	"github.com/kgugunava/gorkycode_backend/internal/models"
@@ -49,7 +50,7 @@ type SaveRouteToFavouritesRequest struct {
 	IsFavourite bool `json:"is_favourite"`
 }
 
-func (s *RouteService) Route(ctx context.Context, request SendRouteInfoRequest, response RouteResponse, userID int) { // получаем респонз и из него создаем модель route
+func (s *RouteService) Route(ctx context.Context, request SendRouteInfoRequest, response RouteResponse, userID int) (int, error) { // получаем респонз и из него создаем модель route
 	marshalledRequest, err := json.Marshal(request)
 	if err != nil {
 		log.Fatal("Error while marshalling send route info request", err)
@@ -59,10 +60,15 @@ func (s *RouteService) Route(ctx context.Context, request SendRouteInfoRequest, 
 	if err != nil {
 		log.Fatal("Error while marshalling send route info response", err)
 	}
-	
+
 	serviceRouteWrapper := ServiceRouteWrapper{}
 	serviceRouteWrapper.InitServiceRouteWrapper(marshalledRequest, marshalledResponse)
-	s.routeRepo.AddRouteToDatabase(ctx, *serviceRouteWrapper.RepositoryRouteWrapper, response.Description, userID)
+	routeID, err := s.routeRepo.AddRouteToDatabase(ctx, *serviceRouteWrapper.RepositoryRouteWrapper, response.Description, userID)
+	if err != nil {
+		return 0, fmt.Errorf("add route to dv: %w", err)
+	}
+
+	return routeID, nil
 }
 
 func (s *RouteService) UpdateFavouriteStatus(ctx context.Context, routeID int, userID int, isFavourite bool) error {

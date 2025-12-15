@@ -103,7 +103,11 @@ func (h *RouteHandler) RouteHandle(c *gin.Context) {
 
 	userIdInt := int(userId.(uint))
 
-	h.routeService.Route(c, request, response, userIdInt)
+	routeID, err := h.routeService.Route(c, request, response, userIdInt)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save route"})
+		return
+	}
 
 	responseForRouteInMap := ResponseForRouteInMap{}
 	
@@ -129,6 +133,7 @@ func (h *RouteHandler) RouteHandle(c *gin.Context) {
 
 
 	c.JSON(http.StatusOK, gin.H{
+		"route_id": routeID,
 		"places": places,
 	})
 }

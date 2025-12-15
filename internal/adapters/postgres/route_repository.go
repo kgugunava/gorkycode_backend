@@ -57,7 +57,7 @@ func (r *RouteRepository) GetInfoForFinalRoute(ctx context.Context, repositoryRo
 }
 
 func (r *RouteRepository) AddRouteToDatabase(ctx context.Context, repositoryRouteWrapper RepositoryRouteWrapper, description string, 
-										userID int) error {
+										userID int) (int, error) {
 	route := repositoryRouteWrapper.Route
 
 	route.UserId = userID
@@ -69,19 +69,23 @@ func (r *RouteRepository) AddRouteToDatabase(ctx context.Context, repositoryRout
 			INSERT INTO route (
 				user_id, query, route, description, is_favourite
 			) VALUES ($1, $2, $3, $4, $5)
+			 RETURNING route_id
 		`
-	_, err := r.pool.Exec(ctx, query, 
+	var routeID int
+	err := r.pool.QueryRow(ctx, query, 
 		route.UserId,
 		route.Query,
 		route.Route, 
 		route.Description,
-		route.IsFavourite)
+		route.IsFavourite,
+	).Scan(&routeID)
 	
 	if err != nil {
-		log.Fatal("Failed to create route in database", err)
+		log.Printf("Failed to create route in database: %v", err)
+		return 0, err
 	}
 
-	return ctx.Err()
+	return routeID, nil
 }
 
 func (r *RouteRepository) UpdateFavouriteStatus(ctx context.Context, routeID int, userID int, isFavourite bool) error {
