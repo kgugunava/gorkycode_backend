@@ -11,7 +11,8 @@ from FlagEmbedding import BGEM3FlagModel, FlagReranker
 from flask import Flask, request, jsonify
 from yaml import safe_load
 
-
+import logging
+import sys
 
 # import json
 # import pandas as pd
@@ -102,6 +103,33 @@ data = load_config()
 #    "user_info": ""
 # }
 
+
+
+# Настройка логирования ---------------------------------------------------------ПОТОМ МОЖНО ПЕРЕПИСАТЬ ПОД НАШ config.yaml
+def setup_logging(debug_mode: bool = False):
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG if debug_mode else logging.INFO)
+    
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(logging.DEBUG if debug_mode else logging.INFO)
+    console_handler.setFormatter(formatter)
+    
+    file_handler = logging.FileHandler('LOGS.log', encoding='utf-8')
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(formatter)
+    
+    logger.addHandler(console_handler)
+    logger.addHandler(file_handler)
+    
+    return logger
+
+
 # всё, что ниже - работа сервера
 device = "cuda" if torch.cuda.is_available() else "cpu"
 app = Flask(__name__)
@@ -111,38 +139,60 @@ query_lock = threading.Lock()
 # query_lock = threading.Lock()
 
 @app.route('/route', methods=['POST'])
-def handle_route_request():
+def handle_route_request(): 
     with query_lock:
-        connection = connect_database(
-            data["DB"]["user"], data["DB"]["password"], data["DB"]["host"],
-            data["DB"]["port"], data["DB"]["database"])
+
+        logger = setup_logging(debug_mode=True)
+        logger.info("СТАРТ РАБОТЫ ML СЕРВИСА")
+        try:
+            connection = connect_database(
+                data["DB"]["user"], data["DB"]["password"], data["DB"]["host"],
+                data["DB"]["port"], data["DB"]["database"])
+        except:
+            logger.warning("CONNECTION WITH DATABASE IS LOST")
+
         # полуяам json из запроса
         jsonchik = request.get_json()
+        logger.info("РАССЧЕТ СПИСКА ПОДХОДЯЩИХ ТОЧЕК")
         retriever = Retriever(connection, modelx, rerankerx)
         # блок кода для обработки запроса моделькой
-        locations = retriever.get_top_by_embeddings(
-            jsonchik.get('interests'), data["BGE"]["dense"],
-            data["BGE"]["sparse"], data["BGE"]["colbert"]
-        )
+        try:
+            locations = retriever.get_top_by_embeddings(
+                jsonchik.get('interests'), data["BGE"]["dense"],
+                data["BGE"]["sparse"], data["BGE"]["colbert"]
+            )
+        except:
+            logger.warning("GETTING TOP BY EMBEDDINGS IS BROKEN")
 
 
         userPonit = Location(
             0, "UserPoint", jsonchik.get('coordinates')[1],
             jsonchik.get('coordinates')[0], "", "")
+        
         planner = RoutePlanner(connection, userPonit, jsonchik.get('time_for_route'),
                             locations, data["RELEVANCE"]["weight_reranker"],
                             data["RELEVANCE"]["weight_distance"])
+        
+        logger.info("РАСССЧЕТ ОПТИМАЛЬНОГО МАРШРУТА")
+        try:
+            locations = planner.solve()
+        except:
+            logger.warning("ROUTE PLANNER IS BROKEN")
 
-        locations = planner.solve()
+        logger.info("ГЕНЕРАЦИЯ ОБОСНОВАНИЯ И ОПИСАНИЯ ПОСТРОЕННОГО МАРШРУТА")
         model = Model(data["OLLAMA"]["name"])
-        model.request_to_model(data["OLLAMA"]["user_prompt"], locations, jsonchik.get('interests'))
+        try:
+            model.request_to_model(data["OLLAMA"]["user_prompt"], locations, jsonchik.get('interests'))
+        except:
+            logger.warning("MODEL IS BROKEN")
+
         connection.close()
         # print(locations)
+
+        logger.info("ЗАВЕРШЕНИЕ РАБОТЫ ML СЕРВИСА")
     return jsonify(locations)
 # Response(json.dumps(locations, ensure_ascii=False, default=str), content_type="application/json")
    
-
-
 # planner.solve()
 
 
