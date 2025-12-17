@@ -2,7 +2,7 @@ package config
 
 import (
     "os"
-    "github.com/joho/godotenv"
+    // "github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -23,10 +23,10 @@ func NewConfig() Config {
 }
 
 func (cfg *Config) InitConfig() error {
-    err := godotenv.Load()
-    if err != nil {
-        return err
-    }
+    // err := godotenv.Load("./.env")
+    // if err != nil {
+    //     return err
+    // }
     cfg.ServerAddress = os.Getenv("SERVER_ADDRESS")
     cfg.Port = os.Getenv("SERVER_PORT")
     cfg.DbUser = os.Getenv("DB_USER")
