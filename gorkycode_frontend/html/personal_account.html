@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Личный кабинет путешественника</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/personal_account.css">
+</head>
+<body>
+    <div id="loader">
+        <img src="/static/src/images/deer_custom.svg" alt="олень" class="loader-deer">
+        <p class="loader-text">
+          Ассистент подбирает лучший маршрут.<br>
+          Это займет пару мгновений...
+        </p>
+    </div>
+    <a href="/html/index.html"><div class="arrow_back"><img src="/static/src/images/back_account.svg" alt=""></div></a>
+    <div class="account_body">
+        <div class="dashboard-container">
+            <div class="dashboard-header">
+                Личный кабинет путешественника
+            </div>
+
+            <main class="main-content">
+                <div class="profile-card">
+                    <div class="profile-avatar">
+                        <div class="avatar-icon">
+                            <img src="/static/src/images/avatar.svg" alt="">
+                        </div>
+                    </div>
+                    <div class="profile-info">
+                        <div class="user-name">Чуня</div>
+                        <div class="stats">
+                            Сгенерировано маршрутов: 5<br><br>
+                            Добавлено в избранное: 2
+                        </div>
+                    </div>
+                </div>
+
+                <div class="navigation-grid">
+                    <button class="nav-button saved-routes">
+                        Сохраненные <br>маршруты
+                    </button>
+                    
+                    <button class="nav-button saved-locations">
+                        Сохраненные <br> локации
+                    </button>
+                </div>
+            </main>
+        </div>
+    </div>
+    <script>
+        window.addEventListener("load", function() {
+          const loader = document.getElementById("loader");
+          loader.classList.add("hidden");
+        });
+        </script>        
+    <script src="/js/page_loader.js"></script>
+</body>
+</html>

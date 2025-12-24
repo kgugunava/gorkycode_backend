@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ИИ-ассистент</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+  <div id="loader">
+    <img src="/static/src/images/deer_custom.svg" alt="олень" class="loader-deer">
+    <p class="loader-text">
+      Ассистент подбирает лучший маршрут.<br>
+      Это займет пару мгновений...
+    </p>
+</div>
+    <div class="main_container section" id="section1">
+        <header>
+            <div class="moon"><img src="/static/src/images/moon.svg" alt=""></div>
+            <div class="auth-btn" id="profileBtn">
+              <img src="/static/src/images/Person.svg" alt="">
+            </div>
+          </header>
+        
+          <!-- Центральный контент -->
+          <main>
+            <div class="center">
+              <h1 id="typewriter"><span>ИИ-ассистент</span> для построения маршрутов в Нижнем Новгороде</h1>
+              <p class="subtitle">Нижний. Маршрут построен</p>
+              <button class="generate-btn">Сгенерируй свой путь</button>
+            </div>
+            <!-- Достопримечательности -->
+            <div class="landmarks">
+              <img src="/static/src/images/main1.svg" alt="">
+            </div>
+          </main>
+          <div class="landback">
+            <img src="/static/src/images/bottom_background_main.png" alt="">
+          </div>
+          <div class="arr">
+            <img src="/static/src/images/arrows.svg" alt="">
+          </div>
+          
+          <div class="cloud1">
+            <img src="/static/src/images/cloud.svg" alt="">
+          </div>
+          <div class="cloud2">
+            <img src="/static/src/images/cloud.svg" alt="">
+          </div>
+          <footer>
+            <div class="scroll-arrow"><img src="/static/src/images/Arrow_down.svg" alt=""></div>
+          </footer> 
+    </div>
+    <div class="select_container section" id="section2">
+        <div class="landup">
+            <img src="/static/src/images/upper_1.png" alt="">
+          </div>
+          <div class="multi-step-container">
+            <div class="steps">
+              <span class="circle active">1</span>
+              <span class="circle">2</span>
+              <span class="circle">3</span>
+              <span class="circle">4</span>
+              <div class="progress-bar">
+                <span class="indicator"></span>
+              </div>
+            </div>
+          
+            <!-- Контентные секции -->
+            <div class="content active" id="stage-init">
+                <div class="item_selection_content">
+                    <div class="item_selection">
+                        <img src="/static/src/images/swag1.svg" alt="">
+                    </div>
+                    <div class="item_selection_text">
+                        Укажите, откуда начнете маршрут
+                        <div class="select_mappa">
+                            <div id="yandex-map" style="width: 100%; height: 400px; border: 1px solid orange; border-radius: 30px; overflow: hidden;"></div>
+
+                            <script src="https://api-maps.yandex.ru/2.1/?apikey=cc625a19-26ae-479c-ac09-b438e3483a08&lang=ru_RU" type="text/javascript"></script>
+
+                        </div>
+                    </div>
+                    <div class="item_selection">
+                        <img src="/static/src/images/swag2.svg" alt="">
+                    </div>
+                </div>
+            </div>
+            <div class="content" id="stage-config">
+                <div class="item_selection_content">
+                    <div class="item_selection">
+                        <img src="/static/src/images/swag3.png" alt="">
+                    </div>
+                    <div class="item_selection_text">
+                        Укажите количество свободного времени на прогулку
+                        <div class="select-wrapper">
+                            <select name="free_time" id="free_time">
+                                <option value="" disabled selected>Выберите время</option>
+                                <option value="30">30 минут</option>
+                                <option value="60">1 час</option>
+                                <option value="90">1.5 часа</option>
+                                <option value="120">2 часа</option>
+                                <option value="180">3 часа и более</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="item_selection">
+                        <img src="/static/src/images/swag4.png" alt="">
+                    </div>
+                </div>
+            </div>
+            <div class="content" id="stage-ai">
+                <div class="item_selection_content">
+                    <div class="item_selection">
+                        <img src="/static/src/images/swag5.svg" alt="">
+                    </div>
+                    <div class="item_selection_text">
+                        Напишите свои пожелания и интересы
+                        <div class="textarea-wrapper">
+                            <textarea id="user_wishes" placeholder="Введите ваши пожелания..."></textarea>
+                        </div>
+                    </div>
+                    <div class="item_selection">
+                        <img src="/static/src/images/swag6.svg" alt="">
+                    </div>
+                </div>
+            </div>
+            <div class="content" id="stage-finish">
+              <div class="item_selection_content">
+                <div class="item_selection">
+                  <img src="/static/src/images/img10.svg" alt="">
+                </div>
+                <div class="item_selection_text">
+                  Финальный протокол маршрутизации
+                  <div id="final-protocol" class="final-protocol">
+                    <p><strong>Выбранная точка:</strong> <span id="final-point">не выбрано</span></p>
+                    <p><strong>Время прогулки:</strong> <span id="final-time">не выбрано</span></p>
+                    <p><strong>Пожелания:</strong> <span id="final-wishes">не выбрано</span></p>
+                  </div>
+                  <div class="create-route">
+                    <button id="createRouteBtn" class="create-route-btn">Создать маршрут</button>
+                  </div>
+                </div>
+                <div class="item_selection">
+                  <img src="/static/src/images/img11.png" alt="">
+                </div>
+              </div>
+            </div>
+          
+            <div class="buttons">
+              <button id="prev" disabled>Назад</button>
+              <button id="next">Далее</button>
+            </div>
+          </div>          
+    </div>
+    
+     </div>
+    </div>
+    </div>
+    <script src="/js/yandex_maps.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const centerBlock = document.querySelector(".center");
+      
+        function adjustMobileView() {
+          if (window.innerWidth < 768) {
+            centerBlock.style.marginTop = "20vh";
+          } else {
+            centerBlock.style.marginTop = "0";
+          }
+        }
+      
+        adjustMobileView();
+        window.addEventListener("resize", adjustMobileView);
+      });
+    </script>
+  
+    <script type="text/javascript" charset="utf-8" src="/js/main.js"></script>
+    <script>
+      window.addEventListener("load", function() {
+        const loader = document.getElementById("loader");
+        loader.classList.add("hidden");
+      });
+      </script>
+      <script>
+        document.getElementById("createRouteBtn").addEventListener("click", async () => {
+          const startPoint = localStorage.getItem("startPoint");
+          const freeTime = localStorage.getItem("selectedTime");
+          const userInterests = localStorage.getItem("userInterests");
+          const loader = document.getElementById("loader");
+          loader.classList.remove("hidden"); // показываем лоадер
+
+          const routeData = {
+            coordinates: JSON.parse(startPoint),
+            time_for_route: parseInt(freeTime, 10),
+            interests: userInterests || ""
+          };
+        
+          try {
+            const token = localStorage.getItem("auth_token");
+        
+            // Отправляем запрос на сервер
+            const res = await fetch("/api/v1/create-route", {
+              method: "POST",
+              headers: { "Content-Type": "application/json",
+                    "Authorization": "Bearer " + localStorage.getItem("auth_token")
+                  },
+                body: JSON.stringify(routeData)
+            });
+        
+            // Если ошибка — останавливаем
+            if (!res.ok) throw new Error("Ошибка загрузки маршрута");
+        
+            // Ждём JSON-ответ
+            const data = await res.json();
+        
+            // Сохраняем маршрут в localStorage
+            localStorage.setItem("routeData", JSON.stringify(data));
+        
+            // Можно чуть подождать для плавности (опционально)
+            await new Promise(r => setTimeout(r, 800));
+        
+            // После получения данных — переходим
+            window.location.href = "/html/finaldest.html";
+        
+          } catch (err) {
+            console.error("Ошибка при создании маршрута:", err);
+            alert("Не удалось создать маршрут. Попробуйте позже.");
+            loader.classList.add("hidden"); // убираем лоадер, если ошибка
+          }
+        });
+          </script>   
+        
+        <script>
+          document.addEventListener('DOMContentLoaded', function() {
+              const profileBtn = document.getElementById('profileBtn');
+              
+              profileBtn.addEventListener('click', function() {
+                  // Проверяем есть ли токен в localStorage
+                  const token = localStorage.getItem('auth_token');
+                  const user = localStorage.getItem('user');
+                  
+                  if (token && user) {
+                      // Пользователь авторизован - переходим в личный кабинет
+                      window.location.href = '/html/personal_account.html';
+                  } else {
+                      // Пользователь не авторизован - переходим на страницу входа
+                      window.location.href = '/html/login.html';
+                  }
+              });
+          });
+        </script>
+</body>
+</html>

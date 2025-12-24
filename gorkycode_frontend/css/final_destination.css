@@ -1,0 +1,461 @@
+ /* Общие стили и фоны */
+ body {
+    /* Создание градиентного фона, как на изображении */
+    background: linear-gradient(180deg, #2e2e2e 0%, #4a3a2d 100%); 
+    color: #ffffff;
+    font-family: monospace, sans-serif; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+}
+
+/* --- Основной макет с CSS Grid --- */
+.route-page-container {
+    width: 80%; /* Ширина страницы */
+    height: 100%;
+    padding: 20px;
+    
+    /* Использование Grid для вертикального выстраивания элементов */
+    display: grid;
+    /* Определяем 4 строки: header, title, map, buttons */
+    grid-template-rows: auto auto 1fr auto; 
+    gap: 20px;
+}
+
+/* --- Header и Заголовок --- */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 30px;
+    padding: 10px 0;
+}
+
+.icon-right {
+    /* Стиль для пиксельной стрелки, чтобы соответствовать дизайну */
+    font-size: 40px; 
+    transform: rotate(180deg);
+    cursor: pointer;
+}
+
+.page-title {
+    text-align: center;
+    font-size: 22px;
+    letter-spacing: 2px;
+    font-weight: normal;
+}
+
+/* --- Блок с картой --- */
+.map-container {
+    /* Занимает всю доступную вертикальную область (1fr) */
+    border-radius: 10px;
+    padding: 15px;
+    overflow: hidden; /* Важно для карты */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.map-placeholder {
+    width: 100%;
+    height: 100%;
+    /* Если это просто изображение, центрируем его */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* Здесь можно добавить стили для реальной карты или фоновое изображение */
+    background-color: #d8d8d8;
+    color: #555;
+    font-size: 20px;
+}
+
+/* --- Кнопки действий (внизу) --- */
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px; /* Промежуток между кнопками */
+    margin-top: 20px;
+}
+
+.view-route-button {
+    color: rgb(0, 0, 0);
+    font-family: inherit;
+    box-shadow: rgb(0, 0, 0) 0.4vw 0.4vw 0px;
+    cursor: pointer;
+    background: rgb(255, 155, 74);
+    border-width: initial;
+    border-style: none;
+    border-color: initial;
+    border-image: initial;
+    padding: 1vw 2vw;
+    border-radius: 0.6vw;
+    transition: 0.2s;
+}
+
+.view-route-button:active {
+    box-shadow: 0 1px 0 #b87c4b;
+    transform: translateY(3px);
+}
+
+.save-button {
+    width: fit-content;
+    height: 50px;
+    padding: 1rem;
+    background-color: transparent;
+    border: 3px solid #FF9F44;
+    border-radius: 30px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-left: 40%;
+    transition: all 0.1s;
+    color: var(--h1);
+    font-family: 'Pixel';
+    font-size: 0.7rem;
+    gap: 5px;
+}
+
+
+
+
+.save-button:active {
+    box-shadow: 0 1px 0 #b87c4b;
+    transform: translateY(3px);
+}
+
+.save-icon {
+    /* Простой квадрат, имитирующий иконку "Сохранить" */
+    display: block;
+    width: 25px;
+    height: 25px;
+    border-radius: 3px;
+}
+/* --- Стили для Модального Окна (Слайдера) --- */
+.modal {
+    /* Скрываем по умолчанию */
+    display: none; 
+    position: fixed; 
+    z-index: 100; /* Поверх всего */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden; /* Важно, чтобы скрыть лишние слайды */
+    background-color: #2e2e2e; /* Основной темный фон */
+}
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: #ffffff;
+    font-size: 50px;
+    font-weight: bold;
+    transition: 0.3s;
+    cursor: pointer;
+    z-index: 101; /* Поверх контента */
+}
+
+/* --- Контейнер Слайдов (Flexbox для горизонтального сдвига) --- */
+.slider-content-wrapper {
+    height: 100%;
+    width: 100%;
+    overflow: hidden; /* Скрывает слайды, которые выходят за экран */
+}
+
+.slider-track {
+    display: flex;
+    height: 100%;
+    transition: transform 0.5s ease-in-out; 
+}
+
+.slide {
+    min-width: 100%; /* Каждый слайд занимает 100% ширины модалки */
+    height: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* --- Компоновка Контента Внутри Слайда (CSS Grid) --- */
+.slide-content-grid {
+    height: 100%;
+    display: grid;
+    /* Две колонки: 1.2fr для медиа, 1fr для текста */
+    grid-template-columns: 1fr 1.2fr; 
+    gap: 40px;
+}
+
+.text-column {
+    margin-top: 15%;
+    width: 90%;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    
+}
+
+.media-column {
+    display: grid;
+    /* Две строки: фото сверху, карта снизу, с гибким распределением */
+    grid-template-rows: 50%; 
+    position: relative;
+    overflow: hidden;
+}
+.line_dest {
+    position: absolute;
+    z-index: -100;
+    top: 100px;
+}
+.line_dest img {
+    height: 100px;
+}
+.step-number {
+    position: absolute;
+    top: 5%;
+    left: 30%;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+}
+
+.step-number img {
+    width: 350px;
+}
+
+.main-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 5px;
+}
+
+.map-preview {
+    background-color: #ffffff;
+    border-radius: 5px;
+}
+.map-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+
+.text-column {
+    color: #ffffff;
+    line-height: 34px;
+    padding-right: 20px;
+    overflow-y: auto;
+}
+
+.text-column p {
+    font-size: 20px;
+}
+
+.slide-title {
+    font-size: 30px;
+    letter-spacing: 2px;
+    margin-bottom: 25px;
+}
+
+.slide-actions {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    font-size: 24px;
+    display: flex;
+    gap: 15px;
+    z-index: 10;
+}
+
+/* --- Кнопки перелистывания (Стрелки) --- */
+.prev, .next {
+    cursor: pointer;
+    position: absolute;
+    top: 50%;
+    width: auto;
+    padding: 16px;
+    margin-top: -22px;
+    color: white;
+    font-weight: bold;
+    font-size: 50px;
+    transition: 0.6s ease;
+    user-select: none;
+    z-index: 101;
+}
+
+.prev {
+    left: 0;
+    border-radius: 3px 0 0 3px;
+}
+
+.next {
+    right: 0;
+    border-radius: 0 3px 3px 0;
+}
+
+.prev:hover, .next:hover {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.map-container iframe {
+    border-radius: 1rem;
+    box-shadow: 0 5px 15px rgba(239, 138, 37, 0.3);
+}
+
+.media-column img {
+}
+
+.item_selection_text iframe {
+    border-radius: 10px;
+}
+
+.place-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 10, 10, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .place-modal.hidden {
+    display: none;
+  }
+  
+  .place-modal-content {
+    background: #1b1b1b;
+    border: 2px solid #ff6600;
+    border-radius: 15px;
+    padding: 25px;
+    min-width: 40%;
+    max-height: 90vh;        /* Ограничиваем высоту окна */
+    overflow-y: auto;  
+    font-family: 'Press Start 2P', monospace;
+    color: #ffb347;
+    text-align: left;
+    position: relative;
+  }
+  
+  .place-modal-content h2 {
+    font-size: 16px;
+    color: #ff6600;
+    margin-bottom: 10px;
+  }
+  
+  .close-modal {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    color: #ff6600;
+    font-size: 22px;
+    cursor: pointer;
+  }
+  
+  .modal-favorite-btn {
+    background: none;
+    border: 1px solid #ff6600;
+    color: #ffb347;
+    font-family: inherit;
+    padding: 10px 15px;
+    cursor: pointer;
+    border-radius: 8px;
+    margin-top: 10px;
+  }
+  .modal-favorite-btn:hover {
+    background: #ff6600;
+    color: black;
+  }
+  
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   /* === СТИЛЬ МОДАЛЬНОГО ОКНА === */
+   .place-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 10, 10, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+
+  .place-modal.hidden {
+    display: none;
+  }
+
+  .place-modal-content {
+    background: linear-gradient(180deg, #2e2e2e 0%, #4a3a2d 80%);
+    border: 2px solid var(--color-button);
+    border-radius: 15px;
+    padding: 25px;
+    width: 420px;
+    font-family: 'Pixel';
+    color: var(--h1);
+    text-align: left;
+    position: relative;
+    line-height: 1.6;
+  }
+  .place-modal-content p {
+    color: var(--h1);
+    font-weight:lighter;
+    padding-bottom: 1rem;
+  }
+
+  .place-modal-content h2 {
+    font-size: 18px;
+    color: var(--h1);
+    margin-bottom: 12px;
+  }
+
+  .close-modal {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    color: var(--h1);
+    font-size: 22px;
+    cursor: pointer;
+  }
+
+  .modal-favorite-btn {
+    background: none;
+    border: 1px solid var(--color-button);
+    color: var(--h1);
+    font-family: inherit;
+    padding: 10px 15px;
+    cursor: pointer;
+    border-radius: 8px;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .modal-favorite-btn:hover {
+    background: var(--h1);;
+    color: black;
+  }
+  

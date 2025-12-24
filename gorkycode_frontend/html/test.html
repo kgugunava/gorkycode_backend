@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/main.css">
+    <title>Пример разметки Flexbox</title>
+    <style>
+        
+        body {
+            background:  linear-gradient(to bottom, #2b2b2b, #554433);
+            background-repeat: no-repeat;
+            min-height: 100vh;
+        }
+        .articles-section {
+            padding: 60px 20px;
+            text-align: center;
+        }
+
+        .section-title {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+
+        .section-description {
+            font-size: 18px;
+            margin-bottom: 40px;
+        }
+
+        
+        .articles-container {
+            display: flex; 
+            
+            justify-content: center; 
+            
+            gap: 30px; 
+            
+            max-width: 1200px; 
+            margin: 0 auto;   
+            padding: 0 20px;
+        }
+
+        .article-card {
+            
+            flex: 1 1 300px; 
+            
+            border-radius: 8px;
+            
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .card-image {
+            width: 90%;
+            padding: 10px; 
+            
+        }
+
+        .card-image iframe {
+            width: 100%;
+            object-fit: contain;
+            height: auto;
+            display: block;
+            border-radius: 10px;
+        }
+
+        .card-content {
+            padding: 20px;
+            text-align: center;
+            flex-grow: 1; 
+        }
+
+        .card-title {
+            font-size: 10px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .card-text {
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 900px) {
+            .articles-container {
+                flex-direction: column; 
+                align-items: center; 
+            }
+            .article-card {
+                max-width: 400px; 
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/html/personal_account.html"><div class="arrow_back"><img src="/static/src/images/arrow_back.svg" alt=""></div></a>
+      </header>
+    <section class="articles-section">
+        <h2 class="section-title">Сохраненные локации</h2>
+        <div class="articles-container">
+            <div class="article-card">
+                <div class="card-image">
+                    <iframe src="https://yandex.ru/map-widget/v1/?um=constructor%3A0e44e1def1e564be99e6d40c6536b6381277f3c416866c89a776bc07f225138f&amp;source=constructor" width="100px" height="10vw" frameborder="0"></iframe>
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">Горьковская - Набережная</h3>
+                </div>
+            </div>
+            
+            <div class="article-card">
+                <div class="card-image">
+                    <iframe src="https://yandex.ru/map-widget/v1/?um=constructor%3A0e44e1def1e564be99e6d40c6536b6381277f3c416866c89a776bc07f225138f&amp;source=constructor" width="100px" height="10vw" frameborder="0"></iframe>
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">Горьковская - Набережная</h3>
+                </div>
+            </div>
+
+            <div class="article-card">
+                <div class="card-image">
+                    <iframe src="https://yandex.ru/map-widget/v1/?um=constructor%3A0e44e1def1e564be99e6d40c6536b6381277f3c416866c89a776bc07f225138f&amp;source=constructor" width="100px" height="10vw" frameborder="0"></iframe>
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">Горьковская - Набережная</h3>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

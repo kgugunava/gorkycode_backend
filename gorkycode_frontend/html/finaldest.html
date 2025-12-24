@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ваш маршрут построен!</title>
+  <link rel="stylesheet" href="/static/css/final_destination.css" />
+  <link rel="stylesheet" href="/static/css/main.css" />
+</head>
+
+<body>
+  <div id="loader">
+    <img src="/static/src/images/deer_custom.svg" alt="олень" class="loader-deer" />
+    <p class="loader-text">
+      Ассистент подбирает лучший маршрут.<br />Это займет пару мгновений...
+    </p>
+  </div>
+
+  <div class="route-page-container">
+    <header>
+      <a href="/html/index.html">
+        <div class="arrow_back">
+          <img src="/static/src/images/arrow_back.svg" alt="" />
+        </div>
+      </a>
+    </header>
+
+    <h1 class="page-title">Ваш туристический маршрут построен!</h1>
+
+    <div class="map-container">
+      <div
+        id="map"
+        style="width: 70%; height: 500px; border-radius: 30px; overflow: hidden"
+      ></div>
+    </div>
+
+    <button class="save-button">
+      <img src="/static/src/images/fav.svg" alt="" />
+      Сохранить маршрут
+    </button>
+  </div>
+
+  <!-- === МОДАЛЬНОЕ ОКНО ДЛЯ ТОЧКИ === -->
+  <div id="placeModal" class="place-modal hidden">
+    <div class="place-modal-content">
+      <span class="close-modal">&times;</span>
+      <h2 class="modal-title"></h2>
+      <p><b>Адрес:</b> <span class="modal-address"></span></p>
+      <p>
+        <b>Времени, чтобы дойти от прошлой точки:</b>
+        <span class="modal-time-come"></span>
+      </p>
+      <p>
+        <b>Время на посещение:</b>
+        <span class="modal-time-visit"></span>
+      </p>
+      <p class="modal-description"></p>
+      <button class="modal-favorite-btn">
+        <img src="/static/src/images/fav.svg" alt="" width="16" />
+        Добавить в избранное
+      </button>
+    </div>
+  </div>
+
+  <!-- === Подключаем API Яндекс.Карт === -->
+  <script src="https://api-maps.yandex.ru/2.1/?apikey=cc625a19-26ae-479c-ac09-b438e3483a08&lang=ru_RU"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async function () {
+  const token = localStorage.getItem("auth_token");
+  const savedData = localStorage.getItem("routeData"); // достаем данные маршрута
+
+  ymaps.ready(async function init() {
+    const map = new ymaps.Map("map", {
+      center: [56.3269, 44.0059],
+      zoom: 12,
+      controls: ["zoomControl", "fullscreenControl"],
+    });
+
+    try {
+      let data;
+
+      // Используем сохранённые данные, если они есть
+      if (savedData) {
+        data = JSON.parse(savedData);
+      } else {
+        // fallback — если пользователь зашёл напрямую
+        const res = await fetch("/api/v1/route-final", {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error(`Ошибка: ${res.status}`);
+        data = await res.json();
+      }
+
+      const points = data.places || [];
+      const coords = [];
+
+      points.forEach((p, index) => {
+        coords.push(p.coordinate);
+
+        const placemark = new ymaps.Placemark(
+          p.coordinate,
+          {
+            hintContent: p.title,
+            balloonContent: `<b>${p.title}</b><br>${p.addres}`,
+          },
+          { preset: "islands#orangeDotIcon" }
+        );
+
+        placemark.events.add("click", () => showPlaceModal(p));
+        map.geoObjects.add(placemark);
+      });
+
+      // соединяем точки маршрута
+      const routeLine = new ymaps.Polyline(coords, {}, {
+        strokeColor: "#ff6600",
+        strokeWidth: 4,
+        strokeOpacity: 0.9,
+      });
+      map.geoObjects.add(routeLine);
+
+      map.setBounds(map.geoObjects.getBounds(), {
+        checkZoomRange: true,
+        zoomMargin: 40,
+      });
+
+    } catch (err) {
+      console.error("Ошибка загрузки маршрута:", err);
+    }
+  });
+});
+
+
+      function showPlaceModal(place) {
+        const modal = document.getElementById("placeModal");
+        modal.querySelector(".modal-title").textContent = place.title;
+        modal.querySelector(".modal-address").textContent = place.addres;
+        modal.querySelector(".modal-time-come").textContent =
+          place.time_to_come + " мин";
+        modal.querySelector(".modal-time-visit").textContent =
+          place.time_to_visit + " мин";
+        modal.querySelector(".modal-description").innerHTML = place.description;
+
+        modal.classList.remove("hidden");
+
+        modal.querySelector(".close-modal").onclick = () =>
+          modal.classList.add("hidden");
+
+        modal.querySelector(".modal-favorite-btn").onclick = async () => { // не реализовано
+          const html = modal.outerHTML;
+          try {
+            const res = await fetch("/api/save-favorite", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ html }),
+            });
+            if (!res.ok) throw new Error(`Ошибка: ${res.status}`);
+            alert("Точка добавлена в избранное!");
+          } catch (err) {
+            console.error("Ошибка при сохранении избранного:", err);
+            alert("Не удалось сохранить.");
+          }
+        };
+      }
+
+    window.addEventListener("load", function () {
+      const loader = document.getElementById("loader");
+      loader.classList.add("hidden");
+    });
+    document.addEventListener("DOMContentLoaded", () => {
+  const saveButton = document.querySelector(".save-button");
+  if (!saveButton) return;
+
+  saveButton.addEventListener("click", async () => {
+    const savedRoute = JSON.parse(localStorage.getItem("routeData"));
+    const routeID = savedRoute?.route_id;
+    const token = localStorage.getItem("auth_token");
+    // const html = document.documentElement.outerHTML;
+
+    try {
+      const res = await fetch("/api/v1/route/favourite", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token || ""}`,
+        },
+        body: JSON.stringify({
+          route_id: routeID,
+          is_favourite: true,
+         }),
+      });
+
+      if (!res.ok) throw new Error(`Ошибка ${res.status}`);
+      alert("Маршрут успешно сохранён!");
+      savedRoute.is_favourite = true;
+      localStorage.setItem("routeData", JSON.stringify(savedRoute));
+
+    } catch (err) {
+      console.error("Ошибка сохранения:", err);
+      alert("Не удалось сохранить маршрут.");
+    }
+  });
+});
+  </script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const savedRoute = JSON.parse(localStorage.getItem("routeData"));
+      const routeID = savedRoute?.route_id;
+      const is_favourite = savedRoute?.is_favourite;
+      const saveButton = document.querySelector(".save-button");
+      const saveText = saveButton.querySelector(".save-text");
+      const saveIcon = saveButton.querySelector(".save-icon");
+    
+      const updateButtonUI = () => {
+        if (is_favourite) {
+          saveText.textContent = "Удалить из сохраненных";
+          saveIcon.src = "/static/src/images/bookmark.png";
+        } else {
+          saveText.textContent = "Сохранить маршрут";
+          saveIcon.src = "/static/src/images/fav.svg";
+        }
+      };
+    
+      updateButtonUI();
+    
+      saveButton.addEventListener("click", async () => {
+        const token = localStorage.getItem("auth_token");
+    
+        updateButtonUI();
+    
+        try {
+          const res = await fetch("/api/v1/route/favourite", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token || ""}`,
+            },
+            body: JSON.stringify({
+              route_id: routeID,
+              is_favorite: is_favourite
+            }),
+          });
+    
+          if (!res.ok) throw new Error(`Ошибка ${res.status}`);
+          console.log(is_favourite ? "Маршрут сохранён" : "Маршрут удалён");
+        } catch (err) {
+          console.error("Ошибка сохранения:", err);
+          alert("Не удалось обновить статус маршрута.");
+          updateButtonUI();
+        }
+      });
+    });
+    </script>
+
+
+</body>
+</html>

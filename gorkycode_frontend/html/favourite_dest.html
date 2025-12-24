@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Сохранённые маршруты</title>
+  <link rel="stylesheet" href="/static/css/main.css">
+  <link rel="stylesheet" href="/static/css/personal_account.css">
+</head>
+<body>
+  <div id="loader">
+    <img src="/static/src/images/deer_custom.svg" alt="олень" class="loader-deer">
+    <p class="loader-text">
+      Загружаем ваши маршруты...<br>Пожалуйста, подождите.
+    </p>
+  </div>
+
+  <a href="/html/personal_account.html" class="arrow_back">
+    <img src="/static/src/images/back_account.svg" alt="">
+  </a>
+
+  <div class="account_body">
+    <div class="dashboard-container">
+      <div class="dashboard-header">Сохранённые маршруты</div>
+      <main class="saved-routes-container">
+        <div id="routes-list" class="routes-list"></div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Модальное окно для маршрута -->
+  <div id="routeModal" class="route-modal hidden">
+    <div class="route-modal-content">
+      <span class="close-modal">&times;</span>
+      <h2 class="modal-title"></h2>
+      <p class="modal-description"></p>
+      <div id="modal-map" class="modal-map" style="width:100%;height:400px;border-radius:20px;"></div>
+    </div>
+  </div>
+
+  <script src="https://api-maps.yandex.ru/2.1/?apikey=cc625a19-26ae-479c-ac09-b438e3483a08&lang=ru_RU"></script>
+  <script src="/js/page_loader.js"></script>
+</body>
+</html>
