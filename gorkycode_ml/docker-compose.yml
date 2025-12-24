@@ -17,23 +17,50 @@ services:
       - ./backups:/backups
       - ./init_db:/docker-entrypoint-initdb.d
 
-
   osrm:
-    image: ghcr.io/project-osrm/osrm-backend
+    image: osrm/osrm-backend:latest-assertions
     container_name: osrm-server
     ports:
       - "8000:8000"
     volumes:
       - ./data:/data
     command:
-      - "osrm-routed"
-      - "-p"
+      - osrm-routed
+      - --algorithm
+      - mld
+      - --port
       - "8000"
-      - "--algorithm"
-      - "mld"
-      - "/data/volga-fed-district-251025.osrm"
+      - /data/volga-fed-district-251222.osrm
     restart: always
+  app:
+    image: gorkycode-ml:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gorkycode-ml
+    restart: always
+    depends_on:
+      - db
+      - osrm
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./src:/app/src
+      - C:/Users/burov/.cache/huggingface:/root/.cache/huggingface
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      HF_HOME: /root/.cache/huggingface
+      HUGGINGFACE_HUB_CACHE: /root/.cache/huggingface/hub
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+
 
 volumes:
   pgdata:
-

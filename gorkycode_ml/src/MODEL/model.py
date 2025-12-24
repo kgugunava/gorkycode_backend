@@ -7,7 +7,7 @@ class Model:
 
         self.logger = logging.getLogger("MODEL")
         try:
-            self.client = Client(host="http://localhost:11434")
+            self.client = Client(host="http://host.docker.internal:11434")
         except:
             self.logger.warning("CLIENT INITIALIZATION PROBLEM")
         self.model = model_name

@@ -132,16 +132,19 @@ def setup_logging(debug_mode: bool = False):
 
 # всё, что ниже - работа сервера
 device = "cuda" if torch.cuda.is_available() else "cpu"
+
 app = Flask(__name__)
+
 modelx = load_model(device)
+
 rerankerx = load_reranker(device)
+
 query_lock = threading.Lock()
-# query_lock = threading.Lock()
+
 
 @app.route('/route', methods=['POST'])
 def handle_route_request(): 
     with query_lock:
-
         logger = setup_logging(debug_mode=True)
         logger.info("СТАРТ РАБОТЫ ML СЕРВИСА")
         try:
@@ -166,7 +169,7 @@ def handle_route_request():
 
 
         userPonit = Location(
-            0, "UserPoint", jsonchik.get('coordinates')[1],
+            0, "Cтартовая точка", jsonchik.get('coordinates')[1],
             jsonchik.get('coordinates')[0], "", "")
         
         planner = RoutePlanner(connection, userPonit, jsonchik.get('time_for_route'),
@@ -190,6 +193,7 @@ def handle_route_request():
         # print(locations)
 
         logger.info("ЗАВЕРШЕНИЕ РАБОТЫ ML СЕРВИСА")
+        print(locations)
     return jsonify(locations)
 # Response(json.dumps(locations, ensure_ascii=False, default=str), content_type="application/json")
    
@@ -198,4 +202,4 @@ def handle_route_request():
 
 # тут начинается область работы сервера
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    app.run(debug=False, host='0.0.0.0', port=5001)

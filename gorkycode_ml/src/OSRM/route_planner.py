@@ -5,36 +5,33 @@ import numpy as np
 import requests
 import logging
 
+
+
 class RoutePlanner:
     def loadTime(self, from_id, to_id):
 
-        try:
-            cursor = self.connection.cursor()
-            cursor.execute(f'''
-                    SELECT duration_hours
-                    FROM walking_matrix
-                    WHERE from_id = {from_id}
-                    AND to_id = {to_id};
-                ''')
+        cursor = self.connection.cursor()
 
-            duration = cursor.fetchone()
+        cursor.execute(f'''
+                SELECT duration_hours
+                FROM walking_matrix
+                WHERE from_id = {from_id}
+                AND to_id = {to_id};
+            ''')
 
-            # print(duration[0])
-            cursor.close()
-        except:
-            self.logger.warning("TIME EXTRACTION PROBLEM ")
-    
+        duration = cursor.fetchone()
+
+        # print(duration[0])
+        cursor.close()
+
         # +1 потому что срезает минуты, а мы должны быть уверены,
         # что он не вылезет за лимит времени
-        return int(duration[0] * 60) + 11
+        return int(duration[0] * 60) + 1
 
     def __init__(self, connection, user_point: Location,
                  T_limit: int, locations, weight_rerank, weight_distance):
-        
-        self.logger = logging.getLogger("ROUTE_PLANNER")
-        self.logger.debug("ROUTE_PLANNER IS LAUNCHED")
-
         self.connection = connection
+        self.logger = logging.getLogger("ROUTE")
         self.time_limit = T_limit  # в минутах
         # тут первая точка - это всегда местоположение пользователя!
         # (потому что это будет старт) ТАК ЖЕ ДЛЯ НЕЁ НАДО
@@ -43,19 +40,14 @@ class RoutePlanner:
 
         # тут мы выгружаем выбранные точки по айдишникам
         #   топ-N точек с их embedding и временами
-        try:
-            cursor = connection.cursor()
+        cursor = connection.cursor()
 
-            cursor.execute(f'''
-            SELECT id, name, longitude, latitude, address, description FROM locations
-            WHERE id IN ({" ,".join([str(x) for x in locations['id']])});
-            ''')
-            test_data = cursor.fetchall()
+        cursor.execute(f'''
+        SELECT id, name, longitude, latitude, address, description FROM locations
+        WHERE id IN ({" ,".join([str(x) for x in locations['id']])});
+        ''')
+        test_data = cursor.fetchall()
 
-            cursor.close()
-        except:
-            self.logger.warning("LOCATIONS' INFO EXTRACTIONS PROBLEM")
-    
         self.relevance_scores = {}
         self.relevance_scores[0] = 0
 
@@ -73,6 +65,8 @@ class RoutePlanner:
                 * np.exp(-weight_distance *
                          (10 + locations["time_to_user"][i]) / T_limit)
 
+        cursor.close()
+
         # print([x.get_title() for x in all_nodes])
 
         self.num_locations = len(self.all_nodes)
@@ -81,26 +75,37 @@ class RoutePlanner:
 
         # 2. Создаем урезанную матрицу времени только для этих точек
         # Это нужно для эффективности работы callback-функции.
-
-        self.logger.debug("СОЗДАНИЕ МАТРИЦЫ ВРЕМЕНИ ДЛЯ ВЫБРАННЫХ ТОЧЕК")
-
         self.small_time_matrix = []
+        i = 0
         for from_node in self.all_nodes:
+            j = 0
             row = []
             for to_node in self.all_nodes:
                 # если точка - пользователь, то пользуемся OSRM
-                if (from_node == user_point and to_node == user_point):
+                if (from_node == user_point and  to_node == user_point):
                     row.append(1)
                 elif (from_node == user_point):
-                    row.append(
-                        int(locations["time_to_user"][locations["id"] == to_node.get_id()][0]) + 11)
-                elif (to_node == user_point):
-                    row.append(
-                        int(locations["time_to_user"][locations["id"] == from_node.get_id()][0]) + 11)
+                    # print(f'точка старт: {from_node.get_latitude()} , {from_node.get_longitude()} точка финиш: {to_node.get_latitude()} , {to_node.get_longitude()}',
+                        #    self.get_walking_time_from_and_to_user_in_minute(
+                # from_node, to_node))
+                    x = locations["time_to_user"][j-1] + 20
+                    row.append(x)
+                elif( to_node == user_point):   
+                #     x =  self.get_walking_time_from_and_to_user_in_minute(
+                # from_node, to_node)
+                    x = locations["time_to_user"][i-1] + 20
+                    row.append(x)
                 else:
-                    row.append(self.loadTime(from_node.id, to_node.id))
+                    row.append(self.loadTime(from_node.id, to_node.id)) + 20
+                j+=1
             self.small_time_matrix.append(row)
+            i+=1
 
+
+        for i in range(len(self.small_time_matrix)):
+            for j in range(len(self.small_time_matrix[i])):
+                print(str(self.small_time_matrix[i][j]) + " ",end="")
+            print()
         # Создаем менеджер индексов.
         # Стартуем с индекса 0 (user_start_index в small_time_matrix).
         self.manager = pywrapcp.RoutingIndexManager(
@@ -180,7 +185,7 @@ class RoutePlanner:
             from_lon, from_lat = FROMpoint.get_longitude(), FROMpoint.get_latitude()
             to_lon, to_lat = TOpoint.get_longitude(), TOpoint.get_latitude()
 
-            url = f"http://localhost:8000/route/v1/foot/{from_lon},{from_lat};{to_lon},{to_lat}"
+            url = f"http://osrm:8000/route/v1/foot/{from_lon},{from_lat};{to_lon},{to_lat}"
             response = requests.get(url, timeout=30)
             data = response.json()
 
@@ -188,7 +193,7 @@ class RoutePlanner:
                 duration_seconds = data['routes'][0]['duration']
                 return int(duration_seconds / 60) + 1
         except Exception as e:
-            self.logger.warning(f"OSRM PROBLEM --- {e}")
+            print(e)
         return -1
 
     def solve(self):
@@ -204,10 +209,7 @@ class RoutePlanner:
         }
 
         # Решаем задачу!
-        try:
-            solution = self.routing.SolveWithParameters(self.search_parameters)
-        except:
-            self.logger.warning("SOLVE PROBLEM")
+        solution = self.routing.SolveWithParameters(self.search_parameters)
 
         if solution:
             # начинаем с первого (и единственного) транспортного средства
@@ -224,13 +226,14 @@ class RoutePlanner:
                 node_index = self.manager.IndexToNode(index)
                 route_nodes.append(self.all_nodes[node_index])
                 visited_nodes.add(node_index)
+                self.logger.debug(f"NODE_INDEX: {node_index, previous_index if node_index != 0 else 0, int(self.small_time_matrix[node_index][previous_index]) if node_index != 0 else 0  }")     
                 response["places"].append({
                     "title": self.all_nodes[node_index].get_title(),
                     "addres": self.all_nodes[node_index].get_addr(),
                     "coordinate": [self.all_nodes[node_index].get_latitude(), self.all_nodes[node_index].get_longitude()],
                     "url": "",
-                    "time_to_visit": 10 if node_index != 0 else 0,
-                    "time_to_come": self.small_time_matrix[node_index][previous_index] - 10 if node_index != 0 else 0 ,
+                    "time_to_visit": 20 if node_index != 0 else 0,
+                    "time_to_come": int(self.small_time_matrix[node_index][previous_index]) - 20 if node_index != 0 else 0 ,
                     # время, чтобы добраться до места
                     "description": self.all_nodes[node_index].get_description()
                     # информация о месте
@@ -240,7 +243,7 @@ class RoutePlanner:
                 if node_index != 0:
                     total_relevance += self.relevance_scores.get(node_index, 0)
 
-                total_time += self.small_time_matrix[node_index][previous_index] - 20 if node_index != 0 else 0
+                total_time += int(self.small_time_matrix[node_index][previous_index]) if node_index != 0 else 0
 
                 plan_output += f'   ({self.all_nodes[node_index].get_title()} \
                 {self.all_nodes[node_index].get_id()}) ->'
@@ -255,14 +258,12 @@ class RoutePlanner:
                 if node_index != 0:
                     total_relevance += self.relevance_scores.get(node_index, 0)
 
-            self.logger.debug(f"SOLVE : {plan_output}")
-
             plan_output += ' КОНЕЦ\n'
 
-            plan_output += f'Общее время пути: {total_time - self.get_walking_time_from_and_to_user_in_minute(
+            plan_output += f"""Общее время пути: {total_time - self.get_walking_time_from_and_to_user_in_minute(
                 route_nodes[-1], route_nodes[0])} минут или же \
             {(total_time - self.get_walking_time_from_and_to_user_in_minute(
-                    route_nodes[-1], route_nodes[0]))/60} часов.\n'
+                    route_nodes[-1], route_nodes[0]))/60} часов.\n"""
             plan_output += f'Суммарный relevance: {total_relevance}\n'
             plan_output += f'Посещено точек: {len(visited_nodes)} из \
             {self.num_locations}\n'
@@ -275,8 +276,6 @@ class RoutePlanner:
 
         else:
             print('Решение не найдено.')
-            self.logger.debug("SOLVE : РЕШЕНИЕ НЕ НАЙДЕНО")
-
         return response
 
 
