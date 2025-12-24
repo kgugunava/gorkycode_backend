@@ -6,15 +6,18 @@ import (
     
     "github.com/jackc/pgx/v5"
     "github.com/jackc/pgx/v5/pgxpool"
+
     "github.com/kgugunava/gorkycode_backend/internal/models"
+    "github.com/kgugunava/gorkycode_backend/internal/utils"
 )
 
 type UserRepository struct {
     pool *pgxpool.Pool
+    logger *utils.Logger
 }
 
-func NewUserRepository(pool *pgxpool.Pool) *UserRepository {
-    return &UserRepository{pool: pool}
+func NewUserRepository(pool *pgxpool.Pool, logger *utils.Logger) *UserRepository {
+    return &UserRepository{pool: pool, logger: logger}
 }
 
 func (r *UserRepository) Create(user *models.User) error {

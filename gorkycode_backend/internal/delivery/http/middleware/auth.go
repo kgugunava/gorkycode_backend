@@ -1,15 +1,15 @@
 package middleware
 
 import (
-    "net/http"
-    "strings"
-    "fmt"
+	"net/http"
+	"strings"
 
-    "github.com/gin-gonic/gin"
-    "github.com/kgugunava/gorkycode_backend/internal/utils"
+	"github.com/gin-gonic/gin"
+	"github.com/kgugunava/gorkycode_backend/internal/utils"
+	"go.uber.org/zap"
 )
 
-func AuthMiddleware() gin.HandlerFunc {
+func AuthMiddleware(logger *utils.Logger) gin.HandlerFunc {
     return func(c *gin.Context) {
 
         // Разрешаем preflight-запросы CORS
@@ -36,7 +36,7 @@ func AuthMiddleware() gin.HandlerFunc {
         token := parts[1]
         claims, err := utils.ValidateToken(token)
         if err != nil {
-            fmt.Printf("Token validation error: %v\n", err)
+            logger.Logger.Error("Token validation error ", zap.Error(err))
             c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
             c.Abort()
             return

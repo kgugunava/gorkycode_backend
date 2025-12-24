@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/kgugunava/gorkycode_backend/internal/services"
+	"go.uber.org/zap"
 )
 
 var taskStore = make(map[string]*RouteTask)
@@ -35,10 +36,10 @@ func (h *RouteHandler) CreateRouteHandler(c *gin.Context) {
 		return
 	}
 
-	// Генерируем ID задачи
+    h.logger.Logger.Debug("генерируется ID задачи")
 	taskID := fmt.Sprintf("task_%d_%d", userID.(uint), time.Now().Unix())
 	
-	// Создаем задачу
+    h.logger.Logger.Debug("создание задачи")
 	task := &RouteTask{
 		ID:        taskID,
 		Status:    "processing",
@@ -47,7 +48,7 @@ func (h *RouteHandler) CreateRouteHandler(c *gin.Context) {
 	}
 	taskStore[taskID] = task
 
-	// Запускаем асинхронную обработку
+    h.logger.Logger.Debug("запуск асинхронной обработки")
 	go h.processRouteAsync(taskID, request, userID.(uint))
 
 	c.JSON(http.StatusAccepted, gin.H{
@@ -57,7 +58,7 @@ func (h *RouteHandler) CreateRouteHandler(c *gin.Context) {
 	})
 }
 
-// RouteStatusHandler - возвращает статус задачи
+// возвращает статус задачи
 func (h *RouteHandler) RouteStatusHandler(c *gin.Context) {
 	taskID := c.Param("taskId")
 	
@@ -81,7 +82,7 @@ func (h *RouteHandler) RouteStatusHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// processRouteAsync - асинхронно обрабатывает маршрут
+// асинхронно обрабатывает маршрут
 func (h *RouteHandler) processRouteAsync(taskID string, request services.SendRouteInfoRequest, userID uint) {
     defer func() {
         if r := recover(); r != nil {
@@ -91,11 +92,9 @@ func (h *RouteHandler) processRouteAsync(taskID string, request services.SendRou
         }
     }()
 
-    // Имитируем долгий расчет
-    fmt.Printf("🔄 Начинаем расчет маршрута для задачи %s\n", taskID)
+    h.logger.Logger.Debug("Начинаем расчет маршрута для задачи %s\n")
     time.Sleep(5 * time.Second)
 
-    // Создаем места в формате, соответствующем ML-сервису
     places := []json.RawMessage{
         json.RawMessage(`{
             "addres": "",
@@ -126,23 +125,20 @@ func (h *RouteHandler) processRouteAsync(taskID string, request services.SendRou
         }`),
     }
 
-    // Создаем результат согласно вашей структуре RouteResponse
     result := &services.RouteResponse{
         Description: "Пешеходный маршрут по историческому центру Нижнего Новгорода",
-        Time:        120, // общее время маршрута в минутах
+        Time:        120, 
         CountPlaces: len(places),
         Places:      places,
     }
 
-    // Обновляем задачу
     task := taskStore[taskID]
     task.Status = "completed"
     task.Result = result
     
-    fmt.Printf("✅ Расчет маршрута завершен для задачи %s\n", taskID)
+    h.logger.Logger.Debug("Расчет маршрута завершен для задачи ", zap.String("task_id", taskID))
     
-    // Логируем результат
-    fmt.Printf("📝 Описание: %s\n", result.Description)
-    fmt.Printf("⏱️ Общее время: %d минут\n", result.Time)
-    fmt.Printf("📍 Количество мест: %d\n", result.CountPlaces)
+    h.logger.Logger.Debug("Описание: ", zap.String("description", result.Description))
+    h.logger.Logger.Debug("Общее время: ", zap.Int("time", result.Time))
+    h.logger.Logger.Debug("Количество мест: ", zap.Int("count_places", result.CountPlaces))
 }

@@ -5,15 +5,25 @@ services:
     image: pgvector/pgvector:pg17
     container_name: postgres_db
     restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: gorkycode_backend_db
-      PGPORT: 5432
+    env_file:
+    - ./gorkycode_backend/.env
     ports:
-      - "5431:5432"
+      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+
+  app:
+    build:
+      context: ./gorkycode_backend
+      dockerfile: Dockerfile
+    container_name: app
+    restart: always
+    depends_on:
+      - db
+    env_file:
+    - ./gorkycode_backend/.env
+    ports:
+      - "8080:8080"
 
 volumes:
   pgdata:

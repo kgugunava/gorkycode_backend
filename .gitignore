@@ -1,3 +1,5 @@
+cmd cmd/main cmd/main/main.go gorkycode_ml internal internal/adapters internal/app internal/config internal/delivery internal/models internal/services internal/utils .env .env.example docker-compose.yml go.mod go.sum
+.env
 # If you prefer the allow list template instead of the deny list, see community template:
 # https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
 #

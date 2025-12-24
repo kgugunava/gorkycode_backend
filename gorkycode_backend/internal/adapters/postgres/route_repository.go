@@ -7,20 +7,23 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	
 	"github.com/kgugunava/gorkycode_backend/internal/models"
+	"github.com/kgugunava/gorkycode_backend/internal/utils"
 )
 
 
 type RouteRepository struct {
 	pool *pgxpool.Pool
+	logger *utils.Logger
 }
 
 type RepositoryRouteWrapper struct {
 	Route *models.Route
 }
 
-func NewRouteRepository(pool *pgxpool.Pool) *RouteRepository {
-	return &RouteRepository{pool: pool}
+func NewRouteRepository(pool *pgxpool.Pool, logger *utils.Logger) *RouteRepository {
+	return &RouteRepository{pool: pool, logger: logger}
 }
 
 func (w *RepositoryRouteWrapper) InitRepositoryRouteWrapper(queryJson json.RawMessage, routeJson json.RawMessage) {

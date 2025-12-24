@@ -3,23 +3,30 @@ package services
 import (
 	"context"
 	"encoding/json"
+<<<<<<< HEAD:internal/services/route_service.go
 	"log"
 	"fmt"
+=======
+
+	"go.uber.org/zap"
+>>>>>>> origin/fix-17-12-backend:gorkycode_backend/internal/services/route_service.go
 
 	"github.com/kgugunava/gorkycode_backend/internal/adapters/postgres"
 	"github.com/kgugunava/gorkycode_backend/internal/models"
+	"github.com/kgugunava/gorkycode_backend/internal/utils"
 )
 
 type RouteService struct {
 	routeRepo *postgres.RouteRepository
+	logger *utils.Logger
 }
 
 type ServiceRouteWrapper struct {
 	RepositoryRouteWrapper *postgres.RepositoryRouteWrapper
 }
 
-func NewRouteService(createRouteRepo *postgres.RouteRepository) *RouteService {
-	return &RouteService{routeRepo: createRouteRepo}
+func NewRouteService(createRouteRepo *postgres.RouteRepository, logger *utils.Logger) *RouteService {
+	return &RouteService{routeRepo: createRouteRepo, logger: logger}
 }
 
 func (w *ServiceRouteWrapper) InitServiceRouteWrapper(queryJson json.RawMessage, routeJson json.RawMessage) {
@@ -53,12 +60,12 @@ type SaveRouteToFavouritesRequest struct {
 func (s *RouteService) Route(ctx context.Context, request SendRouteInfoRequest, response RouteResponse, userID int) (int, error) { // получаем респонз и из него создаем модель route
 	marshalledRequest, err := json.Marshal(request)
 	if err != nil {
-		log.Fatal("Error while marshalling send route info request", err)
+		s.logger.Logger.Error("Error while marshalling send route info request ", zap.Error(err))
 	}	
 
 	marshalledResponse, err := json.Marshal(response)
 	if err != nil {
-		log.Fatal("Error while marshalling send route info response", err)
+		s.logger.Logger.Error("Error while marshalling send route info response ", zap.Error(err))
 	}
 
 	serviceRouteWrapper := ServiceRouteWrapper{}
